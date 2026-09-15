@@ -1,4 +1,3 @@
-
 name: Deploy Aghwar Connect to GitHub Pages
 
 on:
@@ -37,7 +36,7 @@ jobs:
 
       - name: Build all 68 Stitch screens
         run: |
-          node -e 'const fs=require("fs"),path=require("path"); const outer=JSON.parse(fs.readFileSync("route-map.json","utf8")); if(!outer.content) throw new Error("route-map.json content missing"); const data=JSON.parse(outer.content); const screens=data.screens||[]; const expected=data.screen_count||68; let files=[]; function walk(dir){for(const e of fs.readdirSync(dir,{withFileTypes:true})){const p=path.join(dir,e.name); if(e.isDirectory()) walk(p); else files.push(p)}} walk("extracted"); let count=0; for(const s of screens){const wanted=s.source.replace(/\\/g,"/"); let src=files.find(f=>f.replace(/\\/g,"/").endsWith(wanted)); if(!src){throw new Error("Source not found: "+s.source)} const route=(s.route||"/").replace(/^\/|\/$/g,""); const dest=route?path.join("site",route,"index.html"):path.join("site","index.html"); fs.mkdirSync(path.dirname(dest),{recursive:true}); fs.copyFileSync(src,dest); count++;} if(count!==expected) throw new Error("Expected "+expected+" screens, built "+count); console.log("Built "+count+" screens successfully");'
+          node -e 'const fs=require("fs"),path=require("path"); const data=JSON.parse(fs.readFileSync("route-map.json","utf8")); const screens=data.screens||[]; const expected=data.screen_count||68; if(!screens.length) throw new Error("No screens found in route-map.json"); let files=[]; function walk(dir){for(const e of fs.readdirSync(dir,{withFileTypes:true})){const p=path.join(dir,e.name);if(e.isDirectory())walk(p);else files.push(p)}} walk("extracted"); let count=0; for(const s of screens){const wanted=s.source.replace(/\\/g,"/"); const src=files.find(f=>f.replace(/\\/g,"/").endsWith(wanted)); if(!src)throw new Error("Source not found: "+s.source); const route=(s.route||"/").replace(/^\/|\/$/g,""); const dest=route?path.join("site",route,"index.html"):path.join("site","index.html"); fs.mkdirSync(path.dirname(dest),{recursive:true}); fs.copyFileSync(src,dest); count++;} if(count!==expected)throw new Error("Expected "+expected+" screens, built "+count); console.log("Built "+count+" screens successfully");'
 
       - name: Set home page
         run: |
