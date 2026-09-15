@@ -1,0 +1,553 @@
+{
+  "phase": "1",
+  "status": "staging",
+  "source": "Google Stitch official archive",
+  "screen_count": 68,
+  "note": "Initial centralized route map. Button-level links still require validation against each screen before release.",
+  "screens": [
+    {
+      "screen": 1,
+      "route": "/order/payment",
+      "previous": "/order/cart",
+      "next": "/order/success",
+      "title": "الدفع وإتمام الطلب",
+      "source": "aghwar_connect_mobile_1/code.html"
+    },
+    {
+      "screen": 2,
+      "route": "/technicians/profile",
+      "previous": "/technicians",
+      "next": "/technicians/request",
+      "title": "ملف الفني المعتمد",
+      "source": "aghwar_connect_mobile_2/code.html"
+    },
+    {
+      "screen": 3,
+      "route": "/auth/register/type",
+      "previous": "/auth/login",
+      "next": "/auth/register/details",
+      "title": "اختيار نوع الحساب",
+      "source": "aghwar_connect_mobile_3/code.html"
+    },
+    {
+      "screen": 4,
+      "route": "/auth/register",
+      "previous": "/auth/register/type",
+      "next": "/auth/register/success",
+      "title": "إنشاء حساب",
+      "source": "aghwar_connect_mobile_4/code.html"
+    },
+    {
+      "screen": 5,
+      "route": "/tower",
+      "previous": "/home",
+      "next": "/tower",
+      "title": "برج الأغوار العالمي",
+      "source": "aghwar_connect_mobile_5/code.html"
+    },
+    {
+      "screen": 6,
+      "route": "/live/camera",
+      "previous": "/live",
+      "next": "/live/booking",
+      "title": "كاميرا البث المباشر",
+      "source": "aghwar_connect_mobile_6/code.html"
+    },
+    {
+      "screen": 7,
+      "route": "/account/logout",
+      "previous": "/account/security",
+      "next": "/auth/login",
+      "title": "تسجيل الخروج والجلسات",
+      "source": "aghwar_connect_mobile_7/code.html"
+    },
+    {
+      "screen": 8,
+      "route": "/orders/history",
+      "previous": "/account",
+      "next": "/orders",
+      "title": "سجل الطلبات والمشتريات",
+      "source": "aghwar_connect_mobile_8/code.html"
+    },
+    {
+      "screen": 9,
+      "route": "/account/settings",
+      "previous": "/account",
+      "next": "/account/privacy",
+      "title": "إعدادات الحساب والأمان",
+      "source": "aghwar_connect_mobile_9/code.html"
+    },
+    {
+      "screen": 10,
+      "route": "/account/profile/edit",
+      "previous": "/account/profile",
+      "next": "/account/profile",
+      "title": "تعديل الملف الشخصي",
+      "source": "aghwar_connect_mobile_10/code.html"
+    },
+    {
+      "screen": 11,
+      "route": "/live/camera/2",
+      "previous": "/live",
+      "next": "/live/booking",
+      "title": "كاميرا البث المباشر",
+      "source": "aghwar_connect_mobile_11/code.html"
+    },
+    {
+      "screen": 12,
+      "route": "/welcome",
+      "previous": "/",
+      "next": "/auth/login",
+      "title": "أهلاً بك في منصة الأغوار",
+      "source": "aghwar_connect_mobile_12/code.html"
+    },
+    {
+      "screen": 13,
+      "route": "/auth/register/info",
+      "previous": "/auth/register",
+      "next": "/auth/register/type",
+      "title": "طبيعة المنصة ومجانيتها",
+      "source": "aghwar_connect_mobile_13/code.html"
+    },
+    {
+      "screen": 14,
+      "route": "/safety/block-reports",
+      "previous": "/account/settings",
+      "next": "/support",
+      "title": "الأمان والحظر والبلاغات",
+      "source": "aghwar_connect_mobile_14/code.html"
+    },
+    {
+      "screen": 15,
+      "route": "/verification",
+      "previous": "/account/profile",
+      "next": "/verification/request",
+      "title": "توثيق الحساب الشهري",
+      "source": "aghwar_connect_mobile_15/code.html"
+    },
+    {
+      "screen": 16,
+      "route": "/market/product/tomatoes",
+      "previous": "/market",
+      "next": "/market/product",
+      "title": "منتجات المزارعين",
+      "source": "aghwar_connect_mobile_16/code.html"
+    },
+    {
+      "screen": 17,
+      "route": "/live/pending",
+      "previous": "/live/booking",
+      "next": "/live",
+      "title": "بانتظار تفعيل مالك المنصة",
+      "source": "aghwar_connect_mobile_17/code.html"
+    },
+    {
+      "screen": 18,
+      "route": "/support",
+      "previous": "/more",
+      "next": "/support/ticket",
+      "title": "الدعم الفني وخدمة المجتمع",
+      "source": "aghwar_connect_mobile_18/code.html"
+    },
+    {
+      "screen": 19,
+      "route": "/order/tracking",
+      "previous": "/orders",
+      "next": "/order/success",
+      "title": "تتبع الطلب",
+      "source": "aghwar_connect_mobile_19/code.html"
+    },
+    {
+      "screen": 20,
+      "route": "/farmers/store",
+      "previous": "/market",
+      "next": "/market/product",
+      "title": "مؤسسة وادي الأردن الزراعية",
+      "source": "aghwar_connect_mobile_20/code.html"
+    },
+    {
+      "screen": 21,
+      "route": "/directory/contacts",
+      "previous": "/home",
+      "next": "/directory",
+      "title": "جهات الاتصال والطوارئ",
+      "source": "aghwar_connect_mobile_21/code.html"
+    },
+    {
+      "screen": 22,
+      "route": "/home/hub",
+      "previous": "/auth/login",
+      "next": "/home",
+      "title": "الرئيسية",
+      "source": "aghwar_connect_mobile_22/code.html"
+    },
+    {
+      "screen": 23,
+      "route": "/auth/register/region",
+      "previous": "/auth/register/type",
+      "next": "/auth/register/details",
+      "title": "اختيار المنطقة",
+      "source": "aghwar_connect_mobile_23/code.html"
+    },
+    {
+      "screen": 24,
+      "route": "/live/payment/confirm",
+      "previous": "/live/booking",
+      "next": "/live/pending",
+      "title": "تأكيد سداد البث",
+      "source": "aghwar_connect_mobile_24/code.html"
+    },
+    {
+      "screen": 25,
+      "route": "/farmers/store/profile",
+      "previous": "/market",
+      "next": "/market/product",
+      "title": "ملف المتجر الزراعي",
+      "source": "aghwar_connect_mobile_25/code.html"
+    },
+    {
+      "screen": 26,
+      "route": "/account/security/password",
+      "previous": "/account/settings",
+      "next": "/account/security",
+      "title": "الأمان وكلمة المرور",
+      "source": "aghwar_connect_mobile_26/code.html"
+    },
+    {
+      "screen": 27,
+      "route": "/orders/rating",
+      "previous": "/order/tracking",
+      "next": "/orders",
+      "title": "تقييم المتجر والسائق",
+      "source": "aghwar_connect_mobile_27/code.html"
+    },
+    {
+      "screen": 28,
+      "route": "/tower/details",
+      "previous": "/home",
+      "next": "/tower",
+      "title": "تفاصيل برج الأغوار",
+      "source": "aghwar_connect_mobile_28/code.html"
+    },
+    {
+      "screen": 29,
+      "route": "/messages/chat",
+      "previous": "/messages",
+      "next": "/messages",
+      "title": "المحادثة الفورية",
+      "source": "aghwar_connect_mobile_29/code.html"
+    },
+    {
+      "screen": 30,
+      "route": "/live/payment",
+      "previous": "/live/booking",
+      "next": "/live/payment/confirm",
+      "title": "دفع باقة البث",
+      "source": "aghwar_connect_mobile_30/code.html"
+    },
+    {
+      "screen": 31,
+      "route": "/policies",
+      "previous": "/more",
+      "next": "/policies/privacy",
+      "title": "السياسات والمعلومات",
+      "source": "aghwar_connect_mobile_31/code.html"
+    },
+    {
+      "screen": 32,
+      "route": "/notifications",
+      "previous": "/home",
+      "next": "/notifications",
+      "title": "الإشعارات",
+      "source": "aghwar_connect_mobile_32/code.html"
+    },
+    {
+      "screen": 33,
+      "route": "/live/watch",
+      "previous": "/live",
+      "next": "/live",
+      "title": "مشاهدة البث",
+      "source": "aghwar_connect_mobile_33/code.html"
+    },
+    {
+      "screen": 34,
+      "route": "/policies/privacy",
+      "previous": "/policies",
+      "next": "/policies/privacy",
+      "title": "الخصوصية",
+      "source": "aghwar_connect_mobile_34/code.html"
+    },
+    {
+      "screen": 35,
+      "route": "/verification/details",
+      "previous": "/verification",
+      "next": "/verification/request",
+      "title": "تفاصيل التوثيق",
+      "source": "aghwar_connect_mobile_35/code.html"
+    },
+    {
+      "screen": 36,
+      "route": "/marketplace/create",
+      "previous": "/marketplace",
+      "next": "/marketplace/create",
+      "title": "إضافة إعلان جديد",
+      "source": "aghwar_connect_mobile_36/code.html"
+    },
+    {
+      "screen": 37,
+      "route": "/events/aghwar",
+      "previous": "/events",
+      "next": "/events/details",
+      "title": "مهرجان الأغوار",
+      "source": "aghwar_connect_mobile_37/code.html"
+    },
+    {
+      "screen": 38,
+      "route": "/friends",
+      "previous": "/community",
+      "next": "/friends",
+      "title": "الأصدقاء والشبكة",
+      "source": "aghwar_connect_mobile_38/code.html"
+    },
+    {
+      "screen": 39,
+      "route": "/market/payment-transfer",
+      "previous": "/market/order",
+      "next": "/market/order/success",
+      "title": "إشعار التحويل للبائع",
+      "source": "aghwar_connect_mobile_39/code.html"
+    },
+    {
+      "screen": 40,
+      "route": "/stories/create",
+      "previous": "/community",
+      "next": "/stories",
+      "title": "إنشاء قصة",
+      "source": "aghwar_connect_mobile_40/code.html"
+    },
+    {
+      "screen": 41,
+      "route": "/market/seller",
+      "previous": "/market",
+      "next": "/market/product",
+      "title": "ملف البائع وإعلاناته",
+      "source": "aghwar_connect_mobile_41/code.html"
+    },
+    {
+      "screen": 42,
+      "route": "/posts/create",
+      "previous": "/community",
+      "next": "/posts",
+      "title": "إنشاء منشور",
+      "source": "aghwar_connect_mobile_42/code.html"
+    },
+    {
+      "screen": 43,
+      "route": "/ads/my",
+      "previous": "/ads",
+      "next": "/ads/details",
+      "title": "إعلاناتي وإحصائياتها",
+      "source": "aghwar_connect_mobile_43/code.html"
+    },
+    {
+      "screen": 44,
+      "route": "/home",
+      "previous": "/auth/login",
+      "next": "/home",
+      "title": "الرئيسية",
+      "source": "aghwar_connect_mobile_44/code.html"
+    },
+    {
+      "screen": 45,
+      "route": "/live/pending/2",
+      "previous": "/live/booking",
+      "next": "/live",
+      "title": "بانتظار تفعيل مالك المنصة",
+      "source": "aghwar_connect_mobile_45/code.html"
+    },
+    {
+      "screen": 46,
+      "route": "/market/cart",
+      "previous": "/market",
+      "next": "/order/payment",
+      "title": "سلة الشراء",
+      "source": "aghwar_connect_mobile_46/code.html"
+    },
+    {
+      "screen": 47,
+      "route": "/market/product/tractor",
+      "previous": "/market",
+      "next": "/market/cart",
+      "title": "تفاصيل الجرار",
+      "source": "aghwar_connect_mobile_47/code.html"
+    },
+    {
+      "screen": 48,
+      "route": "/location",
+      "previous": "/auth/register/region",
+      "next": "/home",
+      "title": "تحديد الموقع",
+      "source": "aghwar_connect_mobile_48/code.html"
+    },
+    {
+      "screen": 49,
+      "route": "/filters",
+      "previous": "/home",
+      "next": "/search/results",
+      "title": "تخصيص الفلترة",
+      "source": "aghwar_connect_mobile_49/code.html"
+    },
+    {
+      "screen": 50,
+      "route": "/account/security/sessions",
+      "previous": "/account/security",
+      "next": "/account/logout",
+      "title": "الأجهزة والجلسات",
+      "source": "aghwar_connect_mobile_50/code.html"
+    },
+    {
+      "screen": 51,
+      "route": "/messages",
+      "previous": "/home",
+      "next": "/messages/chat",
+      "title": "المحادثات والرسائل",
+      "source": "aghwar_connect_mobile_51/code.html"
+    },
+    {
+      "screen": 52,
+      "route": "/posts/details",
+      "previous": "/community",
+      "next": "/posts/details",
+      "title": "تفاصيل المنشور",
+      "source": "aghwar_connect_mobile_52/code.html"
+    },
+    {
+      "screen": 53,
+      "route": "/technicians",
+      "previous": "/home",
+      "next": "/technicians/profile",
+      "title": "دليل الفنيين",
+      "source": "aghwar_connect_mobile_53/code.html"
+    },
+    {
+      "screen": 54,
+      "route": "/account/logout/confirm",
+      "previous": "/account/security",
+      "next": "/auth/login",
+      "title": "تأكيد تسجيل الخروج",
+      "source": "aghwar_connect_mobile_54/code.html"
+    },
+    {
+      "screen": 55,
+      "route": "/market/product/tomato-box",
+      "previous": "/market",
+      "next": "/market/product",
+      "title": "صندوق بندورة",
+      "source": "aghwar_connect_mobile_55/code.html"
+    },
+    {
+      "screen": 56,
+      "route": "/messages/chat/2",
+      "previous": "/messages",
+      "next": "/messages",
+      "title": "المحادثات والرسائل",
+      "source": "aghwar_connect_mobile_56/code.html"
+    },
+    {
+      "screen": 57,
+      "route": "/community",
+      "previous": "/home",
+      "next": "/community",
+      "title": "مجتمع الأغوار",
+      "source": "aghwar_connect_mobile_57/code.html"
+    },
+    {
+      "screen": 58,
+      "route": "/technicians/profile/2",
+      "previous": "/technicians",
+      "next": "/technicians/profile",
+      "title": "ملف الفني",
+      "source": "aghwar_connect_mobile_58/code.html"
+    },
+    {
+      "screen": 59,
+      "route": "/live/booking",
+      "previous": "/live",
+      "next": "/live/payment",
+      "title": "حجز مدة البث",
+      "source": "aghwar_connect_mobile_59/code.html"
+    },
+    {
+      "screen": 60,
+      "route": "/live/end",
+      "previous": "/live",
+      "next": "/live/summary",
+      "title": "إنهاء البث",
+      "source": "aghwar_connect_mobile_60/code.html"
+    },
+    {
+      "screen": 61,
+      "route": "/live/summary",
+      "previous": "/live/end",
+      "next": "/live",
+      "title": "حصاد البث",
+      "source": "aghwar_connect_mobile_61/code.html"
+    },
+    {
+      "screen": 62,
+      "route": "/live/camera/3",
+      "previous": "/live",
+      "next": "/live/watch",
+      "title": "كاميرا البث",
+      "source": "aghwar_connect_mobile_62/code.html"
+    },
+    {
+      "screen": 63,
+      "route": "/live/watch/2",
+      "previous": "/live",
+      "next": "/live",
+      "title": "مشاهدة البث",
+      "source": "aghwar_connect_mobile_63/code.html"
+    },
+    {
+      "screen": 64,
+      "route": "/technicians/maintenance",
+      "previous": "/home",
+      "next": "/technicians",
+      "title": "دليل الفنيين والصيانة",
+      "source": "aghwar_connect_mobile_64/code.html"
+    },
+    {
+      "screen": 65,
+      "route": "/community/registration",
+      "previous": "/auth/login",
+      "next": "/community",
+      "title": "مجتمع الأغوار",
+      "source": "aghwar_connect_mobile_65/code.html"
+    },
+    {
+      "screen": 66,
+      "route": "/orders/invoice",
+      "previous": "/order/success",
+      "next": "/orders",
+      "title": "الفاتورة",
+      "source": "aghwar_connect_mobile_66/code.html"
+    },
+    {
+      "screen": 67,
+      "route": "/home/2",
+      "previous": "/auth/login",
+      "next": "/home",
+      "title": "الرئيسية",
+      "source": "aghwar_connect_mobile_67/code.html"
+    },
+    {
+      "screen": 68,
+      "route": "/stories/create/2",
+      "previous": "/community",
+      "next": "/stories",
+      "title": "إنشاء قصة",
+      "source": "aghwar_connect_mobile_68/code.html"
+    }
+  ]
+}
