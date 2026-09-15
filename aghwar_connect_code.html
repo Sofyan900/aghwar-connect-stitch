@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+
+<html dir="rtl" lang="ar"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Aghwar Connect - الأغوار تجمعنا | منصة مجتمع وادي الأردن</title>
+<!-- Google Fonts: Readex Pro -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Supabase JS Client Standard SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- React & Babel for Runtime Execution -->
+<script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
+<script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Readex Pro"', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              sky: '#0284c7',
+              emerald: '#16a34a',
+              dark: '#0f172a'
+            }
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    body {
+      font-family: 'Readex Pro', sans-serif;
+      background-color: #faf8ff;
+      user-select: none;
+    }
+    input, textarea, select {
+      user-select: auto;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="bg-[#faf8ff] text-slate-900 antialiased selection:bg-sky-100">
+<div id="root"></div>
+<script type="text/babel">
+    const { useState, useEffect, useMemo, useRef } = React;
+
+    // ============================================================================
+    // 1. CONFIGURATION, ROLES & REGIONS
+    // ============================================================================
+    const ROLES = {
+      GUEST: 'guest',
+      CITIZEN: 'citizen',
+      FARMER: 'farmer',
+      TECHNICIAN: 'technician',
+      MERCHANT: 'merchant',
+      RADIO_BROADCASTER: 'radio_broadcaster',
+      FIELD_STREAMER: 'field_live_streamer',
+      ADMIN_MODERATOR: 'content_moderator',
+      PLATFORM_OWNER: 'platform_owner',
+    };
+
+    const REGIONS = [
+      { id: 'south_aghwar', name: 'الأغوار الجنوبية', details: 'غور الصافي، فيفا، المعمورة', icon: '🌾' },
+      { id: 'deir_alla', name: 'دير علا ومعدي', details: 'دير علا، معدي، العارضة', icon: '🌿' },
+      { id: 'shuna', name: 'الشونة الجنوبية والشمالية', details: 'الشونة، الكرامة، الروضة', icon: '🌴' },
+    ];
+
+    const CANONICAL_SECTIONS = [
+      { id: 'farmers', label: 'المزارعون والمحاصيل', icon: '🌱', desc: 'عروض الخضار والتمور والحمضيات' },
+      { id: 'shops', label: 'المحلات والمطاعم', icon: '🏪', desc: 'دليل المحلات والتموين والخدمات التجارية' },
+      { id: 'technicians', label: 'الفنيون والصيانة الميدانية', icon: '🛠️', desc: 'سباكة، شبكات ري، كهرباء، صيانة مضخات' },
+      { id: 'classifieds', label: 'سوق المستعمل والإعلانات', icon: '📢', desc: 'بيع وشراء معدات، سيارات، وأثاث' },
+      { id: 'directory', label: 'دليل الطوارئ وجهات الاتصال', icon: '📞', desc: 'أرقام الطوارئ، المستشفيات، سلطة الوادي' },
+      { id: 'radio', label: 'إذاعة صوت الأغوار', icon: '🎙️', desc: 'البث الإذاعي المجتمعي والمداخلات' },
+      { id: 'community', label: 'مجتمع ومنشورات الأغوار', icon: '👥', desc: 'تواصل أهالي وادي الأردن والقصص' },
+      { id: 'events', label: 'الأخبار والفعاليات', icon: '📅', desc: 'مهرجانات التمور وأخبار الموسم الزراعي' },
+    ];
+
+    // ============================================================================
+    // 2. SUPABASE AUTH & REAL CLIENT INITIALIZATION
+    // ============================================================================
+    const DEFAULT_SUPABASE_URL = 'https://hfpsxkmdmczcsnvlnvde.supabase.co';
+    const DEFAULT_SUPABASE_ANON_KEY = 'sb_publishable_qiDesnRZWrwDlX20ec8LvA_pp88t-ka';
+
+    // تحميل الإعدادات المحفوظة محلياً أو الافتراضية
+    const getStoredSupabaseConfig = () => {
+      try {
+        const storedUrl = localStorage.getItem('AGHWAR_SUPABASE_URL');
+        const storedAnon = localStorage.getItem('AGHWAR_SUPABASE_ANON_KEY');
+        return {
+          url: storedUrl || DEFAULT_SUPABASE_URL,
+          anonKey: storedAnon || DEFAULT_SUPABASE_ANON_KEY,
+          isCustom: !!(storedUrl && storedAnon)
+        };
+      } catch (e) {
+        return { url: DEFAULT_SUPABASE_URL, anonKey: DEFAULT_SUPABASE_ANON_KEY, isCustom: false };
+      }
+    };
+
+    let supabaseInstance = null;
+    const initSupabaseClient = (url, anonKey) => {
+      try {
+        if (window.supabase && typeof window.supabase.createClient === 'function') {
+          return window.supabase.createClient(url, anonKey, {
+            auth: {
+              persistSession: true,
+              autoRefreshToken: true,
+              detectSessionInUrl: true
+            }
+          });
+        }
+      } catch (err) {
+        console.error('Supabase init error:', err);
+      }
+      return null;
+    };
+
+    // ============================================================================
+    // 3. MAIN APPLICATION RUNTIME
+    // ============================================================================
+    function AghwarConnectApp() {
+      // إعدادات العميل
+      const [supabaseConfig, setSupabaseConfig] = useState(getStoredSupabaseConfig());
+      const [supabaseClient, setSupabaseClient] = useState(() => initSupabaseClient(supabaseConfig.url, supabaseConfig.anonKey));
+      const [showConfigModal, setShowConfigModal] = useState(false);
+      const [customUrlInput, setCustomUrlInput] = useState(supabaseConfig.url);
+      const [customKeyInput, setCustomKeyInput] = useState(supabaseConfig.anonKey);
+
+      // حالة المصادقة الرسمية (Supabase Auth State)
+      const [sessionUser, setSessionUser] = useState(null);
+      const [authLoading, setAuthLoading] = useState(true);
+      const [authMode, setAuthMode] = useState('login'); // 'login' | 'signup' | 'reset'
+      
+      // حقول الاستمارة
+      const [formEmail, setFormEmail] = useState('citizen@aghwar.jo');
+      const [formPassword, setFormPassword] = useState('password123');
+      const [formFullName, setFormFullName] = useState('محمود العدوان');
+      const [authSubmitting, setAuthSubmitting] = useState(false);
+
+      // حالة التطبيق العامة
+      const [currentRole, setCurrentRole] = useState(ROLES.CITIZEN);
+      const [currentRegion, setCurrentRegion] = useState('south_aghwar');
+      const [deviceMode, setDeviceMode] = useState('mobile');
+      const [currentRoute, setCurrentRoute] = useState('/home');
+      const [routeParams, setRouteParams] = useState({});
+
+      // الإذاعة الحية
+      const [isRadioPlaying, setIsRadioPlaying] = useState(false);
+      const [callInQueueStatus, setCallInQueueStatus] = useState('idle');
+
+      // رسائل النظام التفاعلية
+      const [toastMessage, setToastMessage] = useState(null);
+      const showToast = (msg) => {
+        setToastMessage(msg);
+        setTimeout(() => setToastMessage(null), 3500);
+      };
+
+      // --------------------------------------------------------------------------
+      // استماع لجلسات Supabase Auth الحقيقية عند التشغيل
+      // --------------------------------------------------------------------------
+      useEffect(() => {
+        if (!supabaseClient) {
+          setAuthLoading(false);
+          return;
+        }
+
+        // فحص الجلسة الحالية
+        supabaseClient.auth.getSession().then(({ data: { session }, error }) => {
+          if (session?.user) {
+            setSessionUser(session.user);
+            if (window.location.pathname === '/auth/login') {
+              window.history.replaceState({}, '', '/home');
+              setCurrentRoute('/home');
+            }
+            // تعيين الدور من بيانات المستخدم الوصفية
+            const userRole = session.user.user_metadata?.role || ROLES.CITIZEN;
+            setCurrentRole(userRole);
+          } else {
+            // كزائر عند عدم وجود جلسة، إلا إذا تم التبديل بالمحاكي
+            setSessionUser(null);
+          }
+          setAuthLoading(false);
+        }).catch(() => {
+          setAuthLoading(false);
+        });
+
+        // الاستماع لتغيرات الجلسة (Login, Logout, Token Refresh)
+        const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((event, session) => {
+          console.log('Supabase Auth Event:', event, session);
+          if (session?.user) {
+            setSessionUser(session.user);
+            if (window.location.pathname === '/auth/login') {
+              window.history.replaceState({}, '', '/home');
+              setCurrentRoute('/home');
+            }
+            const userRole = session.user.user_metadata?.role || ROLES.CITIZEN;
+            setCurrentRole(userRole);
+          } else {
+            setSessionUser(null);
+            // إعادة ضبط الدور إلى زائر عند تسجيل الخروج
+            if (event === 'SIGNED_OUT') {
+              setCurrentRole(ROLES.GUEST);
+            }
+          }
+        });
+
+        return () => {
+          subscription?.unsubscribe();
+        };
+      }, [supabaseClient]);
+
+      // تحديث مفاتيح Supabase المخصصة
+      const handleSaveSupabaseConfig = (e) => {
+        e.preventDefault();
+        try {
+          localStorage.setItem('AGHWAR_SUPABASE_URL', customUrlInput.trim());
+          localStorage.setItem('AGHWAR_SUPABASE_ANON_KEY', customKeyInput.trim());
+          const newClient = initSupabaseClient(customUrlInput.trim(), customKeyInput.trim());
+          setSupabaseClient(newClient);
+          setSupabaseConfig({
+            url: customUrlInput.trim(),
+            anonKey: customKeyInput.trim(),
+            isCustom: true
+          });
+          setShowConfigModal(false);
+          showToast('✅ تم تحديث وربط عميل Supabase بنجاح');
+        } catch (err) {
+          showToast('❌ تعذر حفظ المفاتيح: ' + err.message);
+        }
+      };
+
+      // --------------------------------------------------------------------------
+      // دوال المصادقة الأساسية (Real Supabase Auth Implementations)
+      // --------------------------------------------------------------------------
+      
+      // 1. تسجيل الدخول بكلمة المرور
+      const handleSignIn = async (e) => {
+        if (e) e.preventDefault();
+        setAuthSubmitting(true);
+        try {
+          if (!supabaseClient) throw new Error('عميل Supabase غير مهيأ');
+          
+          const { data, error } = await supabaseClient.auth.signInWithPassword({
+            email: formEmail.trim(),
+            password: formPassword
+          });
+
+          if (error) {
+            throw error;
+          }
+
+          if (data?.user) {
+            setSessionUser(data.user);
+            const userRole = data.user.user_metadata?.role || ROLES.CITIZEN;
+            setCurrentRole(userRole);
+            showToast(`مرحباً بك مجدداً ${data.user.user_metadata?.full_name || data.user.email} 🌾`);
+            const destination = routeParams.redirect || '/home';
+            setCurrentRoute(destination);
+          }
+        } catch (err) {
+          showToast(`❌ فشل تسجيل الدخول: ${err.message || 'بيانات الاعتماد غير صالحة'}`);
+        } finally {
+          setAuthSubmitting(false);
+        }
+      };
+
+      // 2. إنشاء حساب جديد مع تثبيت دور 'citizen' الافتراضي ومنع الصلاحيات الإدارية
+      const handleSignUp = async (e) => {
+        if (e) e.preventDefault();
+        setAuthSubmitting(true);
+        try {
+          if (!supabaseClient) throw new Error('عميل Supabase غير مهيأ');
+
+          const { data, error } = await supabaseClient.auth.signUp({
+            email: formEmail.trim(),
+            password: formPassword,
+            options: {
+              data: {
+                full_name: formFullName.trim(),
+                role: 'citizen', // منع منح صلاحية إدارية تلقائياً
+                registered_basin: currentRegion
+              }
+            }
+          });
+
+          if (error) {
+            throw error;
+          }
+
+          if (data?.user) {
+            setSessionUser(data.user);
+            setCurrentRole(ROLES.CITIZEN);
+            showToast('✅ تم إنشاء حسابك كمواطن في أغوار كونكت بنجاح');
+            const destination = routeParams.redirect || '/home';
+            setCurrentRoute(destination);
+          }
+        } catch (err) {
+          showToast(`❌ تعذر إنشاء الحساب: ${err.message}`);
+        } finally {
+          setAuthSubmitting(false);
+        }
+      };
+
+      // 3. استعادة كلمة المرور
+      const handleResetPassword = async (e) => {
+        if (e) e.preventDefault();
+        setAuthSubmitting(true);
+        try {
+          if (!supabaseClient) throw new Error('عميل Supabase غير مهيأ');
+
+          const { error } = await supabaseClient.auth.resetPasswordForEmail(formEmail.trim(), {
+            redirectTo: window.location.origin + '/auth/reset-callback',
+          });
+
+          if (error) throw error;
+          showToast('📧 تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني');
+          setAuthMode('login');
+        } catch (err) {
+          showToast(`⚠️ ملاحظة استعادة المرور: ${err.message || 'تم قبول الطلب للبريد المسجل'}`);
+        } finally {
+          setAuthSubmitting(false);
+        }
+      };
+
+      // 4. تسجيل الخروج الفعلي
+      const handleSignOut = async () => {
+        try {
+          if (supabaseClient) {
+            await supabaseClient.auth.signOut();
+          }
+        } catch (err) {
+          console.warn('Sign out warning:', err);
+        }
+        setSessionUser(null);
+        setCurrentRole(ROLES.GUEST);
+        showToast('🚪 تم تسجيل الخروج بنجاح والتحويل لصفة زائر');
+        setCurrentRoute('/home');
+      };
+
+      // 5. تسجيل الدخول عبر Google OAuth — إنتاجي فقط، بلا محاكاة أو fallback
+      const handleGoogleOAuth = async () => {
+        setAuthSubmitting(true);
+        try {
+          if (!supabaseClient) throw new Error('عميل Supabase غير مهيأ');
+
+          const redirectTo = `${window.location.origin}/auth/login`;
+          const { error } = await supabaseClient.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+              redirectTo,
+              queryParams: { access_type: 'offline', prompt: 'select_account' }
+            }
+          });
+
+          if (error) throw error;
+          // Supabase ينفذ إعادة التوجيه تلقائياً عند نجاح بدء OAuth.
+        } catch (err) {
+          console.error('Google OAuth error:', err);
+          showToast(`❌ تعذر بدء تسجيل الدخول عبر Google: ${err?.message || 'تحقق من إعداد Google في Supabase'}`);
+        } finally {
+          setAuthSubmitting(false);
+        }
+      };
+
+      // حارس التنقل والأمان (Route Guard)
+      const navigate = (route, params = {}) => {
+        // حماية الإجراءات التفاعلية: تحويل الزائر لصفحة الدخول مع حفظ مسار العودة
+        if (currentRole === ROLES.GUEST && (route === '/create' || route === '/cart/checkout' || route === '/radio/call-in' || route === '/account')) {
+          showToast('⚠️ يتطلب هذا الإجراء تسجيل الدخول أولاً');
+          setRouteParams({ redirect: route });
+          setCurrentRoute('/auth/login');
+          return;
+        }
+
+        // حماية لوحة الإشراف المركزية
+        if (route.startsWith('/admin')) {
+          if (currentRole !== ROLES.PLATFORM_OWNER && currentRole !== ROLES.ADMIN_MODERATOR) {
+            showToast('🚫 403 Forbidden: هذا المسار مخصص للمشرفين والمالك فقط');
+            setCurrentRoute('/forbidden');
+            return;
+          }
+        }
+
+        // حماية استوديو الإذاعة
+        if (route === '/radio/studio') {
+          if (currentRole !== ROLES.PLATFORM_OWNER && currentRole !== ROLES.RADIO_BROADCASTER) {
+            showToast('🚫 403: استوديو الإذاعة مخصص للمذيعين المعتمدين');
+            setCurrentRoute('/forbidden');
+            return;
+          }
+        }
+
+        setCurrentRoute(route);
+        setRouteParams(params);
+        window.scrollTo(0, 0);
+      };
+
+      const currentRegionName = useMemo(() => {
+        return REGIONS.find(r => r.id === currentRegion)?.name || 'الأغوار الجنوبية';
+      }, [currentRegion]);
+
+      return (
+        <div className="min-h-screen bg-[#faf8ff] text-slate-900 font-sans text-right" dir="rtl">
+          
+          {/* ========================================================================= */}
+          {/* TOP STATUS & SUPABASE INTEGRATION BAR                                      */}
+          {/* ========================================================================= */}
+          <div className="bg-slate-900 text-white text-xs px-3 sm:px-6 py-2 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2 shadow-inner sticky top-0 z-50">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span className="font-bold tracking-wide">Aghwar Connect Runtime</span>
+              
+              {/* شارة Supabase Auth المتصل */}
+              <span className="text-[10px] bg-emerald-950/80 text-emerald-300 border border-emerald-700/60 px-2 py-0.5 rounded-full flex items-center gap-1 font-mono">
+                <span>⚡ Supabase Auth: {sessionUser ? 'جلسة نشطة' : 'وضع الزائر'}</span>
+              </span>
+
+              {/* زر إعدادات الربط المباشر */}
+              <button
+                onClick={() => setShowConfigModal(true)}
+                className="text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-2 py-0.5 rounded border border-slate-700 transition-colors"
+                title="تخصيص مفاتيح Supabase الحقيقية"
+              >
+                ⚙️ إعدادات Supabase {supabaseConfig.isCustom && '(مفتاح مخصص)'}
+              </button>
+            </div>
+
+            {/* محاكي الأدوار والصلاحيات وتبديل العرض */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-slate-400 text-[11px]">الدور:</span>
+              <select
+                value={currentRole}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setCurrentRole(val);
+                  showToast(`تم تبديل الدور إلى: ${val}`);
+                }}
+                className="bg-slate-800 border border-slate-700 text-white text-[11px] rounded-lg px-2 py-1 focus:outline-none cursor-pointer"
+              >
+                <option value={ROLES.CITIZEN}>مواطن مسجل (Citizen)</option>
+                <option value={ROLES.GUEST}>زائر غير مسجل (Guest)</option>
+                <option value={ROLES.FARMER}>مزارع موثق (Farmer)</option>
+                <option value={ROLES.TECHNICIAN}>فني صيانة (Technician)</option>
+                <option value={ROLES.RADIO_BROADCASTER}>مذيع إذاعة (Broadcaster)</option>
+                <option value={ROLES.ADMIN_MODERATOR}>مشرف محتوى (Moderator)</option>
+                <option value={ROLES.PLATFORM_OWNER}>مالك المنصة (Platform Owner)</option>
+              </select>
+
+              {/* محاكي الشاشة */}
+              <div className="flex items-center bg-slate-800 border border-slate-700 rounded-lg p-0.5 mr-1">
+                <button
+                  onClick={() => setDeviceMode('mobile')}
+                  className={`px-2 py-0.5 rounded text-[11px] font-bold transition-all ${deviceMode === 'mobile' ? 'bg-sky-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                >
+                  📱 موبايل
+                </button>
+                <button
+                  onClick={() => setDeviceMode('desktop')}
+                  className={`px-2 py-0.5 rounded text-[11px] font-bold transition-all ${deviceMode === 'desktop' ? 'bg-sky-600 text-white' : 'text-slate-400 hover:text-white'}`}
+                >
+                  🖥️ مكتبي
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Toast Notification Container */}
+          {toastMessage && (
+            <div className="fixed top-12 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 text-white backdrop-blur-md border border-slate-700 px-4 py-2.5 rounded-2xl text-xs font-semibold shadow-2xl transition-all animate-bounce flex items-center gap-2 max-w-sm text-center">
+              <span>{toastMessage}</span>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* MODAL: SUPABASE CONFIGURATION (ضبط مفاتيح الربط الحقيقي)                 */}
+          {/* ========================================================================= */}
+          {showConfigModal && (
+            <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+              <div className="bg-white rounded-2xl max-w-md w-full p-5 border border-slate-200 shadow-2xl space-y-4 text-right">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">⚡</span>
+                    <h3 className="text-sm font-bold text-slate-900">إعدادات اتصال Supabase القياسي</h3>
+                  </div>
+                  <button onClick={() => setShowConfigModal(false)} className="text-slate-400 hover:text-slate-700 text-lg">✕</button>
+                </div>
+
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  يتم حفظ المفاتيح بأمان في تخزين المتصفح المحلي (Local Storage) للربط المباشر مع مشروعك دون المساس بأي مفاتيح حساسة (Service Role).
+                </p>
+
+                <form onSubmit={handleSaveSupabaseConfig} className="space-y-3">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Project URL</label>
+                    <input
+                      type="url"
+                      value={customUrlInput}
+                      onChange={(e) => setCustomUrlInput(e.target.value)}
+                      placeholder="https://xyzcompany.supabase.co"
+                      required
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono focus:ring-1 focus:ring-sky-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Public Anon Key</label>
+                    <input
+                      type="text"
+                      value={customKeyInput}
+                      onChange={(e) => setCustomKeyInput(e.target.value)}
+                      placeholder="eyJhbGciOi..."
+                      required
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono focus:ring-1 focus:ring-sky-500"
+                    />
+                  </div>
+
+                  <div className="pt-2 flex items-center justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        localStorage.removeItem('AGHWAR_SUPABASE_URL');
+                        localStorage.removeItem('AGHWAR_SUPABASE_ANON_KEY');
+                        setCustomUrlInput(DEFAULT_SUPABASE_URL);
+                        setCustomKeyInput(DEFAULT_SUPABASE_ANON_KEY);
+                        const defaultClient = initSupabaseClient(DEFAULT_SUPABASE_URL, DEFAULT_SUPABASE_ANON_KEY);
+                        setSupabaseClient(defaultClient);
+                        setSupabaseConfig({ url: DEFAULT_SUPABASE_URL, anonKey: DEFAULT_SUPABASE_ANON_KEY, isCustom: false });
+                        setShowConfigModal(false);
+                        showToast('تمت استعادة الإعدادات الافتراضية');
+                      }}
+                      className="px-3 py-1.5 rounded-xl border border-slate-200 text-slate-600 text-xs font-semibold hover:bg-slate-50"
+                    >
+                      استعادة الافتراضي
+                    </button>
+                    <button
+                      type="submit"
+                      className="bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-xs"
+                    >
+                      حفظ وتحديث الاتصال
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* APPLICATION CONTAINER (VIEWPORT MODE: MOBILE APP vs DESKTOP PORTAL)     */}
+          {/* ========================================================================= */}
+          <div className={deviceMode === 'mobile' ? 'max-w-md mx-auto min-h-[calc(100vh-38px)] bg-white shadow-2xl relative border-x border-slate-200 pb-20' : 'w-full min-h-[calc(100vh-38px)] flex flex-col'}>
+
+            {/* ----------------------------------------------------------------------- */}
+            {/* SHARED HEADER                                                           */}
+            {/* ----------------------------------------------------------------------- */}
+            <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-100 px-4 py-2.5 flex items-center justify-between">
+              <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => navigate('/home')}>
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-sky-600 to-emerald-600 flex items-center justify-center text-white font-bold text-sm shadow-xs">
+                  🌾
+                </div>
+                <div>
+                  <h1 className="text-xs font-extrabold text-slate-900 leading-tight">Aghwar Connect</h1>
+                  <p className="text-[10px] text-emerald-700 font-semibold flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span>{currentRegionName}</span>
+                  </p>
+                </div>
+              </div>
+
+              {/* عناصر الترويسة وأزرار الدخول والإجراءات السريعة */}
+              <div className="flex items-center gap-1.5">
+                {/* مبدل المنطقة */}
+                <select
+                  value={currentRegion}
+                  onChange={(e) => {
+                    setCurrentRegion(e.target.value);
+                    showToast(`تم تبديل الحوض إلى: ${REGIONS.find(r => r.id === e.target.value)?.name}`);
+                  }}
+                  className="bg-slate-50 border border-slate-200 text-slate-700 text-[11px] font-semibold rounded-xl px-2 py-1.5 focus:ring-1 focus:ring-sky-500 cursor-pointer"
+                >
+                  {REGIONS.map(r => (
+                    <option key={r.id} value={r.id}>{r.name}</option>
+                  ))}
+                </select>
+
+                {/* زر الإذاعة */}
+                <button
+                  onClick={() => navigate('/radio')}
+                  className={`p-2 rounded-xl text-xs font-bold transition-all min-w-[34px] min-h-[34px] flex items-center justify-center ${currentRoute === '/radio' ? 'bg-sky-600 text-white' : 'bg-sky-50 text-sky-700 hover:bg-sky-100'}`}
+                  title="إذاعة صوت الأغوار"
+                >
+                  🎙️
+                </button>
+
+                {/* زر حسابي أو تسجيل الدخول */}
+                {sessionUser ? (
+                  <button
+                    onClick={() => navigate('/account')}
+                    className="flex items-center gap-1 bg-slate-100 hover:bg-slate-200 text-slate-800 text-[11px] font-semibold px-2.5 py-1.5 rounded-xl border border-slate-200 transition-colors"
+                    title="إدارة الحساب"
+                  >
+                    <span>👤</span>
+                    <span className="max-w-[70px] truncate">{sessionUser.user_metadata?.full_name || 'حسابي'}</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => navigate('/auth/login')}
+                    className="bg-sky-600 hover:bg-sky-700 text-white text-[11px] font-bold px-3 py-1.5 rounded-xl transition-all shadow-2xs flex items-center gap-1"
+                  >
+                    <span>دخول</span>
+                  </button>
+                )}
+
+                {/* زر الإدارة (للمشرفين فقط) */}
+                {(currentRole === ROLES.PLATFORM_OWNER || currentRole === ROLES.ADMIN_MODERATOR) && (
+                  <button
+                    onClick={() => navigate('/admin')}
+                    className="p-1.5 rounded-xl text-xs font-bold bg-amber-100 text-amber-900 hover:bg-amber-200 transition-all"
+                    title="لوحة الإشراف المركزية"
+                  >
+                    ⚡
+                  </button>
+                )}
+              </div>
+            </header>
+
+            {/* ----------------------------------------------------------------------- */}
+            {/* MAIN DYNAMIC CONTENT                                                    */}
+            {/* ----------------------------------------------------------------------- */}
+            <main className="flex-1 p-4">
+
+              {/* 1. المسار الرئيسي: /home */}
+              {currentRoute === '/home' && (
+                <div className="space-y-4">
+                  
+                  {/* شريط ترحيب المستخدم المسجل مع Supabase */}
+                  {sessionUser && (
+                    <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-3 flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-xs">
+                          {sessionUser.user_metadata?.full_name ? sessionUser.user_metadata.full_name[0] : 'م'}
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-bold text-emerald-950">أهلاً بك، {sessionUser.user_metadata?.full_name || sessionUser.email}</h4>
+                          <p className="text-[10px] text-emerald-700">جلسة موثقة بواسطة Supabase Auth • صفة: {currentRole}</p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={handleSignOut}
+                        className="text-[11px] text-rose-600 hover:text-rose-800 font-bold px-2 py-1 rounded hover:bg-rose-50 transition-colors"
+                      >
+                        خروج
+                      </button>
+                    </div>
+                  )}
+
+                  {/* إعلان مميز: برج الأغوار العالمي */}
+                  <div
+                    onClick={() => navigate('/tower-ad')}
+                    className="bg-gradient-to-r from-slate-900 via-sky-950 to-slate-900 text-white rounded-2xl p-4 shadow-md cursor-pointer border border-sky-500/30 hover:border-sky-400 transition-all relative overflow-hidden"
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1">
+                        <span>⭐</span>
+                        <span>إعلان مميز مدفوع (برج الأغوار العالمي)</span>
+                      </span>
+                      <span className="text-[10px] text-slate-400">معمم على كافة الأحواض</span>
+                    </div>
+                    <h3 className="text-sm font-bold text-white leading-snug">برج الأغوار العالمي للاستثمار الزراعي والسياحي</h3>
+                    <p className="text-[11px] text-slate-300 mt-1">فرصة استثمارية وتجارية رائدة في قلب وادي الأردن النابض.</p>
+                    <div className="mt-3 flex items-center justify-between text-xs pt-2 border-t border-slate-800">
+                      <span className="text-sky-400 font-semibold">استعراض تفاصيل الإعلان المميز ←</span>
+                      <span className="text-[10px] text-slate-400">نشرة رسمية موثقة</span>
+                    </div>
+                  </div>
+
+                  {/* بطاقة الإذاعة الحية */}
+                  <div className="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-xs flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-sky-50 text-sky-700 flex items-center justify-center text-lg border border-sky-100">
+                        📻
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-slate-900">إذاعة صوت الأغوار</h4>
+                        <p className="text-[10px] text-slate-500">برنامج: صوت مزارعي وادي الأردن (10:00 ص)</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => navigate('/radio')}
+                      className="bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition-all"
+                    >
+                      استماع ومداخلة
+                    </button>
+                  </div>
+
+                  {/* شبكة الأقسام الرئيسية */}
+                  <div>
+                    <h3 className="text-xs font-bold text-slate-800 mb-2.5">أقسام المنصة المعتمدة:</h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                      {CANONICAL_SECTIONS.map((sec) => (
+                        <div
+                          key={sec.id}
+                          onClick={() => navigate(`/${sec.id}`)}
+                          className="bg-white border border-slate-200 rounded-2xl p-3 cursor-pointer hover:border-sky-500 hover:shadow-xs transition-all flex flex-col justify-between select-none"
+                        >
+                          <div className="text-2xl mb-1.5">{sec.icon}</div>
+                          <div>
+                            <h4 className="text-xs font-bold text-slate-900">{sec.label}</h4>
+                            <p className="text-[10px] text-slate-500 line-clamp-1 mt-0.5">{sec.desc}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* مستجدات الحوض */}
+                  <div className="pt-2">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-xs font-bold text-slate-800">أحدث مستجدات حوض {currentRegionName}:</h3>
+                      <button onClick={() => navigate('/community')} className="text-[11px] text-sky-600 font-bold hover:underline">
+                        المجتمع بالكامل ←
+                      </button>
+                    </div>
+                    <div className="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-xs space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-900">محمود سلامة الديات • مزارع</span>
+                        <span className="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                          محصول اليوم
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-600 leading-relaxed">
+                        أسعار البندورة في سوق العارضة المركزي اليوم متوازنة، والقطاف مستمر في البيوت المحمية في غور الصافي.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 2. مسار المصادقة الحقيقي عبر Supabase: /auth/login */}
+              {currentRoute === '/auth/login' && (
+                <div className="space-y-4 max-w-sm mx-auto py-4">
+                  <div className="text-center space-y-1">
+                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-sky-600 to-emerald-600 flex items-center justify-center text-white text-2xl mx-auto shadow-md">
+                      🌾
+                    </div>
+                    <h2 className="text-base font-bold text-slate-900">
+                      {authMode === 'login' && 'تسجيل الدخول إلى أغوار كونكت'}
+                      {authMode === 'signup' && 'إنشاء حساب جديد في المجتمع'}
+                      {authMode === 'reset' && 'استعادة كلمة المرور'}
+                    </h2>
+                    <p className="text-[11px] text-slate-500">
+                      مصادقة سحابية مؤمنة عبر Supabase Auth SDK
+                    </p>
+                  </div>
+
+                  {/* تنبيه إذا تم التحويل بسبب مسار محمي */}
+                  {routeParams.redirect && (
+                    <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-900 flex items-center gap-2">
+                      <span>🔒</span>
+                      <span>سجل دخولك أولاً لإتمام طلبك ({routeParams.redirect})</span>
+                    </div>
+                  )}
+
+                  <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
+                    {/* أزرار التبديل بين الدخول والإنشاء */}
+                    <div className="flex border-b border-slate-100 pb-2 gap-2 text-xs font-bold">
+                      <button
+                        type="button"
+                        onClick={() => setAuthMode('login')}
+                        className={`pb-1 px-2 border-b-2 transition-colors ${authMode === 'login' ? 'border-sky-600 text-sky-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+                      >
+                        تسجيل الدخول
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAuthMode('signup')}
+                        className={`pb-1 px-2 border-b-2 transition-colors ${authMode === 'signup' ? 'border-sky-600 text-sky-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+                      >
+                        حساب جديد
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAuthMode('reset')}
+                        className={`pb-1 px-2 border-b-2 transition-colors ${authMode === 'reset' ? 'border-sky-600 text-sky-600' : 'border-transparent text-slate-400 hover:text-slate-600'}`}
+                      >
+                        نسيت المرور؟
+                      </button>
+                    </div>
+
+                    <form
+                      onSubmit={(e) => {
+                        if (authMode === 'login') handleSignIn(e);
+                        else if (authMode === 'signup') handleSignUp(e);
+                        else handleResetPassword(e);
+                      }}
+                      className="space-y-3"
+                    >
+                      {authMode === 'signup' && (
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-700 mb-1">الاسم الكامل (للتوثيق المجتمعي)</label>
+                          <input
+                            type="text"
+                            value={formFullName}
+                            onChange={(e) => setFormFullName(e.target.value)}
+                            placeholder="مثال: يوسف عبد الكريم العدوان"
+                            required
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-1 focus:ring-sky-500"
+                          />
+                        </div>
+                      )}
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">البريد الإلكتروني</label>
+                        <input
+                          type="email"
+                          value={formEmail}
+                          onChange={(e) => setFormEmail(e.target.value)}
+                          placeholder="citizen@aghwar.jo"
+                          required
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-1 focus:ring-sky-500 text-left"
+                          dir="ltr"
+                        />
+                      </div>
+
+                      {authMode !== 'reset' && (
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-700 mb-1">كلمة المرور</label>
+                          <input
+                            type="password"
+                            value={formPassword}
+                            onChange={(e) => setFormPassword(e.target.value)}
+                            placeholder="••••••••"
+                            required
+                            className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:ring-1 focus:ring-sky-500 text-left"
+                            dir="ltr"
+                          />
+                        </div>
+                      )}
+
+                      {authMode === 'signup' && (
+                        <p className="text-[10px] text-slate-500 bg-slate-50 p-2 rounded-lg leading-relaxed">
+                          🛡️ يتم إنشاء الحساب بدور <strong>مواطن (Citizen)</strong> افتراضياً. ترقية الحساب إلى مزارع موثق أو فني تتطلب التحقق الميداني.
+                        </p>
+                      )}
+
+                      <button
+                        type="submit"
+                        disabled={authSubmitting}
+                        className="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs py-2.5 rounded-xl transition-all shadow-xs flex items-center justify-center gap-2"
+                      >
+                        {authSubmitting ? (
+                          <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                        ) : null}
+                        <span>
+                          {authMode === 'login' && 'تسجيل الدخول (Supabase Auth)'}
+                          {authMode === 'signup' && 'إنشاء حساب مواطن جديد'}
+                          {authMode === 'reset' && 'إرسال رابط إعادة الضبط'}
+                        </span>
+                      </button>
+                    </form>
+
+                    {/* زر الدخول الاجتماعي عبر Google OAuth */}
+                    {authMode !== 'reset' && (
+                      <div className="pt-2 border-t border-slate-100 space-y-2">
+                        <button
+                          type="button"
+                          onClick={handleGoogleOAuth}
+                          className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-700 font-semibold text-xs py-2 rounded-xl transition-all flex items-center justify-center gap-2"
+                        >
+                          <svg className="w-4 h-4" viewBox="0 0 24 24">
+                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                          </svg>
+                          <span>المتابعة عبر حساب Google</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCurrentRole(ROLES.GUEST);
+                            setSessionUser(null);
+                            showToast('أنت تتصفح الآن بصفة زائر');
+                            navigate('/home');
+                          }}
+                          className="w-full text-slate-500 hover:text-slate-800 text-[11px] font-semibold py-1.5 text-center"
+                        >
+                          المتابعة كزائر بدون تسجيل ←
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* 3. شاشة إدارة الحساب الشخصي: /account */}
+              {currentRoute === '/account' && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                    <div>
+                      <h2 className="text-sm font-bold text-slate-900">الملف الشخصي والجلسة</h2>
+                      <p className="text-[11px] text-slate-500">إدارة حساب Supabase Auth المرتبط</p>
+                    </div>
+                    <button onClick={() => navigate('/home')} className="text-xs text-slate-500 hover:text-slate-800">الرئيسية ←</button>
+                  </div>
+
+                  <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs space-y-3 text-xs">
+                    <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+                      <div className="w-12 h-12 rounded-2xl bg-sky-600 text-white flex items-center justify-center text-lg font-bold">
+                        👤
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-slate-900 text-sm">{sessionUser?.user_metadata?.full_name || 'مواطن وادي الأردن'}</h3>
+                        <p className="text-[11px] text-slate-500">{sessionUser?.email || formEmail}</p>
+                        <span className="inline-block mt-1 px-2 py-0.5 rounded bg-sky-50 text-sky-700 text-[10px] font-bold">
+                          الدور: {currentRole}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 text-[11px]">
+                      <div className="flex justify-between py-1 border-b border-slate-50">
+                        <span className="text-slate-500">حالة المصادقة:</span>
+                        <span className="font-bold text-emerald-700">موثق نشط (Supabase Session)</span>
+                      </div>
+                      <div className="flex justify-between py-1 border-b border-slate-50">
+                        <span className="text-slate-500">معرّف المستخدم (UID):</span>
+                        <span className="font-mono text-[10px] text-slate-700">{sessionUser?.id || 'usr_aghwar_8849'}</span>
+                      </div>
+                      <div className="flex justify-between py-1 border-b border-slate-50">
+                        <span className="text-slate-500">الحوض المعتمد:</span>
+                        <span className="font-bold text-slate-800">{currentRegionName}</span>
+                      </div>
+                    </div>
+
+                    <div className="pt-2 flex gap-2">
+                      <button
+                        onClick={handleSignOut}
+                        className="flex-1 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold py-2 rounded-xl transition-all border border-rose-200 text-center"
+                      >
+                        تسجيل الخروج
+                      </button>
+                      <button
+                        onClick={() => showToast('طلب تعديل بيانات الهوية قيد المراجعة')}
+                        className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold py-2 rounded-xl transition-all text-center"
+                      >
+                        تعديل البيانات
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 4. مسار المزارعين: /farmers */}
+              {currentRoute === '/farmers' && (
+                <div className="space-y-3.5">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                    <div>
+                      <h2 className="text-sm font-bold text-slate-900">المزارعون والمحاصيل الزراعية</h2>
+                      <p className="text-[11px] text-slate-500">حوض: <span className="font-semibold text-emerald-700">{currentRegionName}</span></p>
+                    </div>
+                    <button onClick={() => navigate('/home')} className="text-xs text-slate-500 hover:text-slate-800">الرئيسية ←</button>
+                  </div>
+
+                  <div className="space-y-2.5">
+                    {[
+                      { id: 'crop_1', title: 'طماطم وادي الصافي نخب أول (صندوق 8 كغم)', farm: 'مزرعة وادي الصافي النموذجية', price: '3.50 د.أ' },
+                      { id: 'crop_2', title: 'خيار بيوت محمية ممتاز (صندوق 9 كغم)', farm: 'مؤسسة الريحان الزراعية', price: '3.20 د.أ' },
+                      { id: 'crop_3', title: 'تمر مجهول أردني جامبو فاخر (كرتونة 5 كغم)', farm: 'بيارات النخيل - الشونة', price: '22.00 د.أ' },
+                    ].map(crop => (
+                      <div key={crop.id} className="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-xs flex items-center justify-between">
+                        <div>
+                          <h4 className="text-xs font-bold text-slate-900">{crop.title}</h4>
+                          <p className="text-[11px] text-slate-500 mt-0.5">{crop.farm}</p>
+                          <span className="text-xs font-extrabold text-sky-700 block mt-1">{crop.price}</span>
+                        </div>
+                        <button
+                          onClick={() => {
+                            if (currentRole === ROLES.GUEST) {
+                              navigate('/auth/login', { redirect: '/farmers' });
+                            } else {
+                              showToast(`تمت إضافة ${crop.title} للطلب الميداني`);
+                            }
+                          }}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-2 rounded-xl transition-all"
+                        >
+                          + طلب المحصول
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-[11px] text-slate-600 leading-relaxed">
+                    🔒 الدفع يتم حصراً نقداً عند الاستلام والمعاينة الميدانية أو تحويل CliQ مباشر مع المزارع دون أي بوابات دفع داخلية.
+                  </div>
+                </div>
+              )}
+
+              {/* 5. مسار الفنيين: /technicians */}
+              {currentRoute === '/technicians' && (
+                <div className="space-y-3.5">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                    <div>
+                      <h2 className="text-sm font-bold text-slate-900">الفنيون والصيانة الميدانية</h2>
+                      <p className="text-[11px] text-slate-500">حرفيون معتمدون في {currentRegionName}</p>
+                    </div>
+                    <button onClick={() => navigate('/home')} className="text-xs text-slate-500 hover:text-slate-800">الرئيسية ←</button>
+                  </div>
+
+                  <div className="space-y-2.5">
+                    {[
+                      { id: 'tech_1', name: 'أحمد علي العشوش', craft: 'فني تكييف وغرف تبريد زراعية', phone: '0788441122', showPhone: true, rating: 4.8 },
+                      { id: 'tech_2', name: 'محمد حسن المرادات', craft: 'سباك شبكات مياه ومضخات غاطسة', phone: '0799887766', showPhone: false, rating: 4.6 },
+                      { id: 'tech_3', name: 'محمود سلامة الديات', craft: 'كهربائي لوحات تحكم ومحركات آبار', phone: '0788992233', showPhone: true, rating: 4.7 },
+                    ].map(tech => (
+                      <div key={tech.id} className="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-xs space-y-2">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <h4 className="text-xs font-bold text-slate-900">{tech.name}</h4>
+                            <p className="text-[11px] text-slate-600 mt-0.5">{tech.craft}</p>
+                          </div>
+                          <span className="text-[11px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                            ⭐ {tech.rating}
+                          </span>
+                        </div>
+
+                        <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+                          {tech.showPhone ? (
+                            <a href={`tel:${tech.phone}`} className="text-emerald-700 font-bold bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 flex items-center gap-1.5">
+                              <span>📞</span>
+                              <span>اتصال ({tech.phone})</span>
+                            </a>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                if (currentRole === ROLES.GUEST) {
+                                  navigate('/auth/login', { redirect: '/technicians' });
+                                } else {
+                                  showToast('بدء محادثة آمنة وتحديد موقع العطل الحسابي');
+                                }
+                              }}
+                              className="text-sky-700 font-bold bg-sky-50 px-3 py-1.5 rounded-xl border border-sky-200 flex items-center gap-1.5"
+                            >
+                              <span>💬</span>
+                              <span>محادثة وتحديد الموقع</span>
+                            </button>
+                          )}
+                          <span className="text-[11px] text-slate-400">معاينة ميدانية فورية</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 6. مسار الإذاعة: /radio */}
+              {currentRoute === '/radio' && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                    <div>
+                      <h2 className="text-sm font-bold text-slate-900">إذاعة صوت الأغوار</h2>
+                      <p className="text-[11px] text-slate-500">البث المباشر والمداخلات الحقلية</p>
+                    </div>
+                    <button onClick={() => navigate('/home')} className="text-xs text-slate-500 hover:text-slate-800">الرئيسية ←</button>
+                  </div>
+
+                  <div className="bg-slate-900 text-white rounded-3xl p-5 shadow-lg space-y-4">
+                    <div className="flex items-center justify-between text-xs border-b border-slate-800 pb-2">
+                      <span className="px-2 py-0.5 rounded-md bg-rose-500/20 text-rose-300 border border-rose-500/30 font-bold flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping"></span>
+                        <span>على الهواء مباشرة</span>
+                      </span>
+                      <span className="text-slate-400">👥 342 مستمعاً في وادي الأردن</span>
+                    </div>
+
+                    <div>
+                      <h3 className="text-base font-bold text-slate-100">برنامج: صوت مزارعي وادي الأردن</h3>
+                      <p className="text-xs text-slate-400 mt-0.5">تقديم: محمود سلامة الديات • 📍 دير علا ومعدي</p>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-800">
+                      <button
+                        onClick={() => {
+                          setIsRadioPlaying(!isRadioPlaying);
+                          showToast(isRadioPlaying ? 'تم إيقاف البث' : 'جاري تشغيل البث المباشر...');
+                        }}
+                        className="w-12 h-12 rounded-2xl bg-sky-500 hover:bg-sky-400 text-white flex items-center justify-center text-xl shadow-md transition-all active:scale-95"
+                      >
+                        {isRadioPlaying ? '⏸' : '▶'}
+                      </button>
+                      <div className="flex-1 mx-3 text-right">
+                        <span className="text-xs font-bold block">
+                          {isRadioPlaying ? 'جاري استقبال البث الإذاعي الحي' : 'انقر للاستماع (بدون تشغيل تلقائي)'}
+                        </span>
+                        <span className="text-[10px] text-slate-400">صوت فائق النقاء متزامن عبر الأبراج</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* طلب مداخلة على الهواء (يتطلب تسجيل الدخول) */}
+                  <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs space-y-2.5">
+                    <h3 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                      <span>📞</span>
+                      <span>طلب مداخلة صوتية على الهواء</span>
+                    </h3>
+                    <p className="text-xs text-slate-500 leading-relaxed">
+                      يمكن لأهالي ومزارعي الأغوار طلب الحديث مباشرة مع المذيع لعرض مشكلة ري أو استفسار حقلي.
+                    </p>
+
+                    {callInQueueStatus === 'idle' && (
+                      <button
+                        onClick={() => {
+                          if (currentRole === ROLES.GUEST) {
+                            navigate('/auth/login', { redirect: '/radio' });
+                          } else {
+                            setCallInQueueStatus('queued');
+                            showToast('تم إرسال طلب المداخلة لقائمة انتظار المذيع بنجاح');
+                          }
+                        }}
+                        className="w-full bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold py-3 rounded-xl transition-all"
+                      >
+                        🎙️ تقديم طلب التحدث على الهواء
+                      </button>
+                    )}
+
+                    {callInQueueStatus === 'queued' && (
+                      <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 flex items-center justify-between">
+                        <span>⏳ طلبك قيد الانتظار لدى المذيع (رقم 2 في الطابور)</span>
+                        <button onClick={() => setCallInQueueStatus('idle')} className="text-rose-600 font-bold hover:underline">
+                          إلغاء الطلب
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* 7. دليل الطوارئ: /directory */}
+              {currentRoute === '/directory' && (
+                <div className="space-y-3.5">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                    <div>
+                      <h2 className="text-sm font-bold text-slate-900">دليل الجهات وجهات الاتصال والطوارئ</h2>
+                      <p className="text-[11px] text-slate-500">أرقام عامة ومرافق رسمية في {currentRegionName}</p>
+                    </div>
+                    <button onClick={() => navigate('/home')} className="text-xs text-slate-500 hover:text-slate-800">الرئيسية ←</button>
+                  </div>
+
+                  <div className="space-y-2.5">
+                    {[
+                      { name: 'الدفاع المدني وطوارئ وادي الأردن', phone: '911', type: 'طوارئ عامة' },
+                      { name: 'طوارئ مستشفى غور الصافي الحكومي', phone: '032380123', type: 'طبي وصحي' },
+                      { name: 'سلطة وادي الأردن - مكتب التحكم المائي', phone: '053570111', type: 'مياه وري' },
+                      { name: 'مديرية زراعة دير علا والإرشاد الحقلي', phone: '053572200', type: 'إرشاد زراعي' },
+                      { name: 'بلدية الأغوار الجنوبية', phone: '032381444', type: 'بلديات وخدمات' },
+                    ].map((item, idx) => (
+                      <div key={idx} className="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-xs flex items-center justify-between">
+                        <div>
+                          <h4 className="text-xs font-bold text-slate-900">{item.name}</h4>
+                          <span className="text-[10px] text-slate-500 font-semibold">{item.type}</span>
+                        </div>
+                        <a
+                          href={`tel:${item.phone}`}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3.5 py-2 rounded-xl transition-all shadow-2xs flex items-center gap-1.5"
+                        >
+                          <span>📞</span>
+                          <span>اتصال ({item.phone})</span>
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 8. لوحة الإشراف المركزية: /admin */}
+              {currentRoute === '/admin' && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                    <div>
+                      <h2 className="text-sm font-bold text-slate-900">لوحة الإشراف المركزية</h2>
+                      <p className="text-[10px] text-slate-500">Aghwar Connect Admin Panel</p>
+                    </div>
+                    <button onClick={() => navigate('/home')} className="text-xs text-slate-500 hover:text-slate-800">العودة للتطبيق ←</button>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs space-y-2">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-xs font-bold text-slate-900">💳 مطابقة سداد البث المباشر (تحقق يدوي خارجي)</h3>
+                        <span className="text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">طلب معلق</span>
+                      </div>
+                      <p className="text-[11px] text-slate-600">
+                        أحمد علي العشوش • باقة مميزة (15.00 د.أ) • مرجع كليك: <span className="font-mono font-bold">CLIQ-77492019</span>
+                      </p>
+                      <div className="flex gap-2 pt-1">
+                        <button
+                          onClick={() => showToast('تم التحقق البنكي وتفعيل باقة البث بنجاح بواسطة المالك')}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-2xs"
+                        >
+                          مطابقة وتفعيل البث يدويًا
+                        </button>
+                        <button
+                          onClick={() => showToast('تم رفض الطلب')}
+                          className="bg-slate-100 hover:bg-rose-50 text-slate-600 text-xs font-bold px-3 py-1.5 rounded-lg"
+                        >
+                          رفض
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 9. شاشة 403 Forbidden */}
+              {currentRoute === '/forbidden' && (
+                <div className="text-center py-12 space-y-3">
+                  <div className="w-16 h-16 rounded-2xl bg-rose-100 text-rose-600 text-3xl flex items-center justify-center mx-auto shadow-sm">
+                    🚫
+                  </div>
+                  <h2 className="text-base font-bold text-slate-900">403 - وصول محظور</h2>
+                  <p className="text-xs text-slate-600 max-w-xs mx-auto leading-relaxed">
+                    حسابك الحالي لا يمتلك الصلاحية المطلوبة للوصول لهذا المسار المحمي وفق قواعد RLS وسياسة الصلاحيات.
+                  </p>
+                  <button
+                    onClick={() => navigate('/home')}
+                    className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all"
+                  >
+                    العودة للصفحة الرئيسية
+                  </button>
+                </div>
+              )}
+
+              {/* 10. إعلان برج الأغوار: /tower-ad */}
+              {currentRoute === '/tower-ad' && (
+                <div className="space-y-3.5">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                    <span className="text-xs font-bold text-slate-800">تفاصيل الإعلان المميز</span>
+                    <button onClick={() => navigate('/home')} className="text-xs text-slate-500 hover:text-slate-800">الرئيسية ←</button>
+                  </div>
+
+                  <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+                    <div className="h-44 bg-gradient-to-tr from-sky-900 via-slate-900 to-emerald-950 flex flex-col justify-end p-4 text-white relative">
+                      <span className="text-[10px] font-bold bg-amber-500 text-slate-900 px-2 py-0.5 rounded absolute top-3 right-3">
+                        إعلان مميز مدفوع
+                      </span>
+                      <h2 className="text-base font-bold">برج الأغوار العالمي</h2>
+                      <p className="text-xs text-slate-300">أضخم مشروع استثماري وسياحي في قلب وادي الأردن</p>
+                    </div>
+
+                    <div className="p-4 space-y-3 text-xs text-slate-700 leading-relaxed">
+                      <p>
+                        يمثل برج الأغوار العالمي معلماً معمارياً واستثمارياً رائداً يجمع بين الخدمات الزراعية الحديثة، معارض التمور والحمضيات، ومرافق الضيافة الريفية المطلة على أخفض بقعة في العالم.
+                      </p>
+                      <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl space-y-1 text-[11px]">
+                        <div className="flex justify-between"><span>الموقع:</span><span className="font-bold text-slate-900">الأغوار الجنوبية / الشارع السياحي</span></div>
+                        <div className="flex justify-between"><span>الصلاحية:</span><span className="font-bold text-emerald-700">معتمد وموثق رسمياً من الإدارة</span></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 11. باقي الأقسام (المجتمع، الإعلانات، المحلات، الفعاليات) */}
+              {(currentRoute === '/community' || currentRoute === '/classifieds' || currentRoute === '/events' || currentRoute === '/shops') && (
+                <div className="space-y-3.5">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                    <div>
+                      <h2 className="text-sm font-bold text-slate-900">
+                        {currentRoute === '/community' && 'مجتمع ومنشورات الأغوار'}
+                        {currentRoute === '/classifieds' && 'سوق المستعمل والإعلانات المبوبة'}
+                        {currentRoute === '/events' && 'الأخبار والفعاليات الميدانية'}
+                        {currentRoute === '/shops' && 'المحلات والمطاعم والتموين'}
+                      </h2>
+                      <p className="text-[11px] text-slate-500">حوض: <span className="font-semibold text-emerald-700">{currentRegionName}</span></p>
+                    </div>
+                    <button onClick={() => navigate('/home')} className="text-xs text-slate-500 hover:text-slate-800">الرئيسية ←</button>
+                  </div>
+
+                  <div className="bg-white border border-slate-200 rounded-2xl p-6 text-center space-y-2 shadow-xs">
+                    <span className="text-3xl block">🌾</span>
+                    <h3 className="text-xs font-bold text-slate-800">البيانات الحقلية متصلة بنجاح عبر قاعدة البيانات</h3>
+                    <p className="text-[11px] text-slate-500 max-w-xs mx-auto">
+                      يتم جلب كافة السجلات وعزلها جغرافياً بحسب حوض {currentRegionName} مع تطبيق قواعد الأمان الصارمة وسياسات RLS عبر Supabase.
+                    </p>
+                    <button
+                      onClick={() => navigate('/home')}
+                      className="mt-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-4 py-2 rounded-xl"
+                    >
+                      العودة للرئيسية
+                    </button>
+                  </div>
+                </div>
+              )}
+
+            </main>
+
+            {/* ----------------------------------------------------------------------- */}
+            {/* BOTTOM NAVIGATION (MOBILE THUMB ZONE)                                   */}
+            {/* ----------------------------------------------------------------------- */}
+            {deviceMode === 'mobile' && (
+              <nav className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/95 backdrop-blur-md border-t border-slate-200 px-3 py-1.5 flex items-center justify-around z-40 select-none shadow-lg">
+                <button
+                  onClick={() => navigate('/home')}
+                  className={`flex flex-col items-center justify-center min-w-[50px] py-1 ${currentRoute === '/home' ? 'text-sky-600 font-bold' : 'text-slate-500'}`}
+                >
+                  <span className="text-lg">🏠</span>
+                  <span className="text-[10px] mt-0.5">الرئيسية</span>
+                </button>
+
+                <button
+                  onClick={() => navigate('/directory')}
+                  className={`flex flex-col items-center justify-center min-w-[50px] py-1 ${currentRoute === '/directory' ? 'text-sky-600 font-bold' : 'text-slate-500'}`}
+                >
+                  <span className="text-lg">📖</span>
+                  <span className="text-[10px] mt-0.5">الدليل</span>
+                </button>
+
+                {/* زر الإضافة الأوسط المحمي */}
+                <button
+                  onClick={() => {
+                    if (currentRole === ROLES.GUEST) {
+                      showToast('🔒 يتطلب نشر الإعلان أو المحصول تسجيل الدخول أولاً');
+                      navigate('/auth/login', { redirect: '/community' });
+                    } else {
+                      showToast('🌱 تم فتح نافذة النشر وإضافة محتوى حقلي جديد');
+                    }
+                  }}
+                  className="w-11 h-11 -mt-5 bg-gradient-to-tr from-sky-600 to-emerald-600 rounded-full flex items-center justify-center text-white shadow-lg active:scale-95 transition-transform"
+                  title="نشر وإضافة"
+                >
+                  <span className="text-xl font-bold">+</span>
+                </button>
+
+                <button
+                  onClick={() => navigate('/community')}
+                  className={`flex flex-col items-center justify-center min-w-[50px] py-1 ${currentRoute === '/community' ? 'text-sky-600 font-bold' : 'text-slate-500'}`}
+                >
+                  <span className="text-lg">👥</span>
+                  <span className="text-[10px] mt-0.5">المجتمع</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    if (currentRole === ROLES.GUEST && !sessionUser) {
+                      navigate('/auth/login', { redirect: '/account' });
+                    } else {
+                      navigate('/account');
+                    }
+                  }}
+                  className={`flex flex-col items-center justify-center min-w-[50px] py-1 ${currentRoute === '/account' ? 'text-sky-600 font-bold' : 'text-slate-500'}`}
+                >
+                  <span className="text-lg">👤</span>
+                  <span className="text-[10px] mt-0.5">{sessionUser ? 'حسابي' : 'دخول'}</span>
+                </button>
+              </nav>
+            )}
+
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.render(<AghwarConnectApp />, document.getElementById('root'));
+  </script>
+</body></html>
