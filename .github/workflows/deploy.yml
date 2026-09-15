@@ -1,9 +1,10 @@
-name: Deploy to GitHub Pages
+name: Deploy Aghwar Connect to GitHub Pages
 
 on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -11,8 +12,9 @@ permissions:
   id-token: write
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
+
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -24,10 +26,88 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
-      - name: Upload artifact
+      - name: Build all 68 Stitch screens
+        shell: bash
+        run: |
+          set -e
+
+          rm -rf site
+          mkdir -p site
+
+          ZIP="Aghwar_Connect_Netlify_Ready-1.zip"
+
+          if [ ! -f "$ZIP" ]; then
+            echo "ERROR: $ZIP not found"
+            exit 1
+          fi
+
+          mkdir -p extracted
+          unzip -q -o "$ZIP" -d extracted
+
+          python3 <<'PY'
+          import json
+          import os
+          import shutil
+
+          root = "extracted"
+          route_file = os.path.join(root, "route-map.json")
+
+          with open(route_file, encoding="utf-8") as f:
+              data = json.load(f)
+
+          routes = data.get("routes", data)
+
+          if isinstance(routes, dict):
+              routes = list(routes.values())
+
+          count = 0
+
+          for item in routes:
+              route = item.get("route") or item.get("path")
+              source = item.get("source")
+
+              if not route or not source:
+                  continue
+
+              source = source.lstrip("/")
+              source_file = os.path.join(root, source)
+
+              if not os.path.isfile(source_file):
+                  print("SKIP:", source_file)
+                  continue
+
+              route = route.split("?", 1)[0].split("#", 1)[0]
+
+              destination = (
+                  "site/index.html"
+                  if route == "/"
+                  else os.path.join(
+                      "site",
+                      route.lstrip("/"),
+                      "index.html"
+                  )
+              )
+
+              os.makedirs(os.path.dirname(destination), exist_ok=True)
+              shutil.copy2(source_file, destination)
+
+              count += 1
+              print("OK:", route)
+
+          print("Published screens:", count)
+
+          if count < 60:
+              raise SystemExit("ERROR: Less than 60 screens generated")
+          PY
+
+          if [ -f "site/home/index.html" ]; then
+            cp "site/home/index.html" "site/index.html"
+          fi
+
+      - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v4
         with:
-          path: '.'
+          path: site
 
       - name: Deploy to GitHub Pages
         id: deployment
