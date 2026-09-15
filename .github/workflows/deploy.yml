@@ -1,4 +1,5 @@
-name: Deploy Aghwar Connect to GitHub Pages
+
+     name: Deploy Aghwar Connect to GitHub Pages
 
 on:
   push:
@@ -32,7 +33,7 @@ jobs:
 
           unzip -q "$ZIP" -d extracted
 
-      - name: Build all Stitch screens
+      - name: Build all 68 Stitch screens
         run: |
           python3 <<'PY'
           import json
@@ -41,18 +42,24 @@ jobs:
           import glob
 
           with open("route-map.json", "r", encoding="utf-8") as f:
-              data = json.load(f)
+              outer = json.load(f)
 
-          routes = data.get("routes", data) if isinstance(data, dict) else data
+          content = outer.get("content")
 
-          if not isinstance(routes, list):
-              raise SystemExit("route-map.json format is invalid")
+          if not content:
+              raise SystemExit("route-map.json content not found")
+
+          data = json.loads(content)
+          screens = data.get("screens", [])
+
+          if not isinstance(screens, list):
+              raise SystemExit("screens list not found")
 
           count = 0
 
-          for item in routes:
-              route = item.get("route")
-              source = item.get("source")
+          for screen in screens:
+              route = screen.get("route")
+              source = screen.get("source")
 
               if not route or not source:
                   continue
@@ -64,6 +71,7 @@ jobs:
                       os.path.join("extracted", "**", source),
                       recursive=True
                   )
+
                   if matches:
                       source_file = matches[0]
 
@@ -72,6 +80,63 @@ jobs:
                   continue
 
               clean_route = route.strip("/")
-              destination = os.path.join("site", clean_route, "index.html")
 
-              
+              if clean_route:
+                  destination = os.path.join(
+                      "site",
+                      clean_route,
+                      "index.html"
+                  )
+              else:
+                  destination = os.path.join(
+                      "site",
+                      "index.html"
+                  )
+
+              os.makedirs(os.path.dirname(destination), exist_ok=True)
+
+              shutil.copy2(source_file, destination)
+
+              count += 1
+              print("BUILT:", route)
+
+          print("TOTAL SCREENS BUILT:", count)
+
+          if count < 60:
+              raise SystemExit(
+                  f"Build stopped: only {count} screens were created"
+              )
+          PY
+
+      - name: Set home page
+        run: |
+          if [ -f "site/home/index.html" ]; then
+            cp "site/home/index.html" "site/index.html"
+          else
+            echo "Home screen not found"
+            exit 1
+          fi
+
+      - name: Preserve 404
+        run: |
+          if [ -f "404.html" ]; then
+            cp "404.html" "site/404.html"
+          fi
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./site
+
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
