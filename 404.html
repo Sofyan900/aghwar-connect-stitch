@@ -1,8 +1,21 @@
-<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Aghwar Connect</title></head><body><script>
-(function(){
-  var p=window.location.pathname;
-  var q=window.location.search;
-  var base=p.substring(0,p.lastIndexOf('/')+1);
-  window.location.replace(base+'#'+p+q);
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Aghwar Connect</title>
+</head>
+<body>
+<script>
+(function () {
+  var path = window.location.pathname;
+  var search = window.location.search;
+  var hash = window.location.hash;
+
+  var target = path + search + hash;
+
+  window.location.replace('/aghwar-connect-stitch/#' + target);
 })();
-</script></body></html>
+</script>
+</body>
+</html>
