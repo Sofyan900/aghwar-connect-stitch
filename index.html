@@ -2,1256 +2,988 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>الأغوار كونكت</title>
 
-<title>Aghwar Connect - الأغوار تجمعنا</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 
-<!-- Tailwind CSS CDN -->
-<script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Noto+Kufi+Arabic:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-<!-- Google Fonts -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Noto+Kufi+Arabic:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<!-- Supabase JS Client -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<script>
-tailwind.config = {
-  theme: {
-    extend: {
-      colors: {
-        brand: {
-          sky: '#0284c7',
-          green: '#16a34a',
-          amber: '#f59e0b',
-          surface: '#faf8ff'
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            sky: {
+              600: '#0284c7'
+            },
+            green: {
+              600: '#16a34a'
+            },
+            amber: {
+              500: '#f59e0b'
+            },
+            surface: '#faf8ff'
+          },
+          fontFamily: {
+            cairo: ['Cairo', 'sans-serif'],
+            kufi: ['Noto Kufi Arabic', 'sans-serif']
+          }
         }
-      },
-      fontFamily: {
-        sans: ['Cairo', 'Noto Kufi Arabic', 'sans-serif']
       }
+    };
+  </script>
+
+  <style>
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      background: #f8fafc;
+      font-family: 'Cairo', sans-serif;
     }
-  }
-}
-</script>
 
-<style>
-body {
-  font-family: 'Cairo', 'Noto Kufi Arabic', sans-serif;
-  background-color: #faf8ff;
-  color: #0f172a;
-  -webkit-tap-highlight-color: transparent;
-}
+    body {
+      min-height: 100vh;
+    }
 
-.thumb-btn {
-  min-height: 44px;
-  min-width: 44px;
-}
+    button,
+    a,
+    input,
+    select,
+    textarea {
+      -webkit-tap-highlight-color: transparent;
+    }
 
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
+    button,
+    a {
+      touch-action: manipulation;
+    }
 
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-</style>
+    .thumb-btn {
+      min-width: 44px;
+      min-height: 44px;
+    }
+
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    #appViewport {
+      padding-bottom: 88px;
+    }
+
+    .app-frame {
+      width: 100%;
+      max-width: 768px;
+      margin: 0 auto;
+      min-height: 100vh;
+      background: #faf8ff;
+    }
+
+    input,
+    select,
+    textarea {
+      font-family: inherit;
+    }
+  </style>
 </head>
 
-<body class="bg-[#faf8ff] text-slate-900 min-h-screen flex flex-col antialiased selection:bg-sky-100 selection:text-sky-800">
+<body>
+  <div class="app-frame">
 
-<div class="w-full max-w-md mx-auto min-h-screen flex flex-col bg-white shadow-xl relative border-x border-slate-100 pb-20">
-
-<!-- Header -->
-<header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-100 px-4 py-2.5 flex items-center justify-between shadow-2xs">
-
-  <div
-    class="flex items-center gap-2 cursor-pointer"
-    onclick="navigateTo('home')"
-  >
-
-    <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-600 to-emerald-600 flex items-center justify-center text-white text-lg shadow-xs">
-      🌾
-    </div>
-
-    <div class="flex flex-col text-right">
-
-      <span class="text-xs font-bold text-slate-900 leading-tight">
-        Aghwar Connect
-      </span>
-
-      <span
-        class="text-[10px] text-emerald-700 font-semibold"
-        id="activeRegionBadge"
-      >
-        الأغوار الجنوبية
-      </span>
-
-    </div>
-
-  </div>
-
-  <div class="flex items-center gap-2">
-
-    <div id="authHeaderAction">
-
-      <button
-        onclick="navigateTo('auth')"
-        class="bg-sky-600 hover:bg-sky-700 text-white text-[11px] font-bold px-3 py-1.5 rounded-xl shadow-xs transition-all thumb-btn flex items-center gap-1"
-      >
-        <span>دخول</span>
-      </button>
-
-    </div>
-
-  </div>
-
-</header>
-
-<!-- Main Viewport -->
-<main
-  id="appViewport"
-  class="flex-1 w-full p-4 overflow-y-auto"
->
-  <div class="flex items-center justify-center min-h-[60vh]">
-    <div class="text-center">
-      <div class="text-3xl mb-2">🌾</div>
-      <p class="text-xs text-slate-500">
-        جاري تحميل الأغوار كونكت...
-      </p>
-    </div>
-  </div>
-</main>
-
-<!-- Bottom Navigation -->
-<nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/95 backdrop-blur-md border-t border-slate-200 py-1.5 px-3 flex items-center justify-around shadow-lg z-50">
-
-  <button
-    onclick="navigateTo('home')"
-    class="nav-item flex flex-col items-center justify-center min-w-[56px] min-h-[44px] text-slate-500 transition-colors"
-    data-route="home"
-  >
-    <span class="text-lg leading-none">🏠</span>
-    <span class="text-[10px] font-bold mt-1">الرئيسية</span>
-  </button>
-
-  <button
-    onclick="navigateTo('directory')"
-    class="nav-item flex flex-col items-center justify-center min-w-[56px] min-h-[44px] text-slate-500 transition-colors"
-    data-route="directory"
-  >
-    <span class="text-lg leading-none">📖</span>
-    <span class="text-[10px] font-bold mt-1">الدليل</span>
-  </button>
-
-  <button
-    onclick="navigateTo('classifieds/add')"
-    class="flex flex-col items-center justify-center min-w-[56px] -mt-5"
-    aria-label="نشر إعلان"
-  >
-    <div class="w-12 h-12 bg-gradient-to-tr from-sky-600 to-emerald-600 rounded-full flex items-center justify-center text-white text-xl shadow-md active:scale-95 transition-transform">
-      +
-    </div>
-
-    <span class="text-[10px] font-bold text-sky-700 mt-0.5">
-      أضف
-    </span>
-  </button>
-
-  <button
-    onclick="navigateTo('community')"
-    class="nav-item flex flex-col items-center justify-center min-w-[56px] min-h-[44px] text-slate-500 transition-colors"
-    data-route="community"
-  >
-    <span class="text-lg leading-none">👥</span>
-    <span class="text-[10px] font-bold mt-1">المجتمع</span>
-  </button>
-
-  <button
-    onclick="navigateTo('profile')"
-    class="nav-item flex flex-col items-center justify-center min-w-[56px] min-h-[44px] text-slate-500 transition-colors"
-    data-route="profile"
-  >
-    <span class="text-lg leading-none">👤</span>
-    <span class="text-[10px] font-bold mt-1">حسابي</span>
-  </button>
-
-</nav>
-
-</div>
-
-<script>
-
-/* =========================================================
-   1. Supabase - Safe Initialization
-   ========================================================= */
-
-const SUPABASE_URL =
-  'https://hfpsxkmdmczcsnvlnvde.supabase.co';
-
-const SUPABASE_ANON =
-  'sb_publishable_qiDesnRZWrwDlX20ec8LvA_pp88t-ka';
-
-let supabase = null;
-
-try {
-
-  if (
-    window.supabase &&
-    typeof window.supabase.createClient === 'function'
-  ) {
-
-    supabase =
-      window.supabase.createClient(
-        SUPABASE_URL,
-        SUPABASE_ANON
-      );
-
-  }
-
-} catch (error) {
-
-  console.error(
-    'Supabase initialization failed:',
-    error
-  );
-
-}
-
-
-/* =========================================================
-   2. Global State
-   ========================================================= */
-
-let currentUser = null;
-
-let currentRegion =
-  'الأغوار الجنوبية';
-
-let radioPlaying = false;
-
-
-/* =========================================================
-   3. Navigation
-   ========================================================= */
-
-function navigateTo(route) {
-
-  window.location.hash =
-    '#/' + route;
-
-}
-
-
-function getRoute() {
-
-  const hash =
-    window.location.hash || '#/home';
-
-  return (
-    hash
-      .replace(/^#\/?/, '')
-      .trim() || 'home'
-  );
-
-}
-
-
-/* =========================================================
-   4. Header Authentication UI
-   ========================================================= */
-
-function updateAuthUI() {
-
-  const container =
-    document.getElementById(
-      'authHeaderAction'
-    );
-
-  if (!container) return;
-
-  if (currentUser) {
-
-    const name =
-      currentUser.user_metadata?.full_name ||
-      currentUser.email?.split('@')[0] ||
-      'مستخدم';
-
-    const firstLetter =
-      name.charAt(0).toUpperCase();
-
-    container.innerHTML = `
-
-      <div class="flex items-center gap-1.5">
+    <header class="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
+      <div class="flex items-center justify-between gap-3 px-4 py-3">
 
         <button
-          onclick="navigateTo('profile')"
-          class="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 px-2.5 py-1 rounded-xl text-[11px] font-bold text-slate-800 transition-colors"
+          type="button"
+          onclick="navigateTo('home')"
+          class="flex items-center gap-2 text-right"
+          aria-label="الأغوار كونكت"
         >
-
-          <span class="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px] font-bold">
-            ${firstLetter}
+          <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-sky-50 text-2xl">
+            🌾
           </span>
 
-          <span class="truncate max-w-[80px]">
-            ${name}
-          </span>
+          <div>
+            <div class="text-base font-extrabold text-slate-800">
+              الأغوار كونكت
+            </div>
+            <div class="text-[11px] text-slate-500">
+              الأغوار تجمعنا
+            </div>
+          </div>
+        </button>
 
+        <div class="flex items-center gap-2">
+          <button
+            type="button"
+            onclick="navigateTo('home')"
+            class="rounded-full bg-sky-50 px-3 py-1.5 text-xs font-bold text-sky-700"
+          >
+            <span id="currentRegionBadge">الأغوار الجنوبية</span>
+          </button>
+
+          <button
+            id="headerAuthButton"
+            type="button"
+            onclick="navigateTo('auth')"
+            class="rounded-xl bg-sky-600 px-3 py-2 text-xs font-bold text-white"
+          >
+            دخول
+          </button>
+        </div>
+
+      </div>
+    </header>
+
+    <main id="appViewport">
+      <div class="flex min-h-[70vh] items-center justify-center px-6">
+        <div class="text-center">
+          <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-sky-50 text-3xl">
+            🌾
+          </div>
+          <div class="font-bold text-slate-700">
+            جاري تحميل الأغوار كونكت...
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <nav class="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 bg-white/95 backdrop-blur">
+      <div class="mx-auto grid max-w-[768px] grid-cols-5">
+
+        <button
+          type="button"
+          data-route="home"
+          class="nav-item flex min-h-[68px] flex-col items-center justify-center gap-1 text-slate-500"
+          onclick="navigateTo('home')"
+        >
+          <span class="text-xl">⌂</span>
+          <span class="text-[11px]">الرئيسية</span>
         </button>
 
         <button
-          onclick="handleSignOut()"
-          class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg text-xs"
-          title="خروج"
+          type="button"
+          data-route="directory"
+          class="nav-item flex min-h-[68px] flex-col items-center justify-center gap-1 text-slate-500"
+          onclick="navigateTo('directory')"
         >
-          🚪
+          <span class="text-xl">▦</span>
+          <span class="text-[11px]">الدليل</span>
+        </button>
+
+        <button
+          type="button"
+          data-route="classifieds/add"
+          class="nav-item flex min-h-[68px] flex-col items-center justify-center gap-1 text-slate-500"
+          onclick="navigateTo('classifieds/add')"
+        >
+          <span class="flex h-9 w-9 items-center justify-center rounded-full bg-sky-600 text-xl font-bold text-white">
+            +
+          </span>
+          <span class="text-[11px]">أضف</span>
+        </button>
+
+        <button
+          type="button"
+          data-route="community"
+          class="nav-item flex min-h-[68px] flex-col items-center justify-center gap-1 text-slate-500"
+          onclick="navigateTo('community')"
+        >
+          <span class="text-xl">👥</span>
+          <span class="text-[11px]">المجتمع</span>
+        </button>
+
+        <button
+          type="button"
+          data-route="profile"
+          class="nav-item flex min-h-[68px] flex-col items-center justify-center gap-1 text-slate-500"
+          onclick="navigateTo('profile')"
+        >
+          <span class="text-xl">◯</span>
+          <span class="text-[11px]">حسابي</span>
         </button>
 
       </div>
-
-    `;
-
-  } else {
-
-    container.innerHTML = `
-
-      <button
-        onclick="navigateTo('auth')"
-        class="bg-sky-600 hover:bg-sky-700 text-white text-[11px] font-bold px-3 py-1.5 rounded-xl shadow-xs transition-all thumb-btn flex items-center gap-1"
-      >
-        <span>دخول</span>
-      </button>
-
-    `;
-
-  }
-
-}
-
-
-/* =========================================================
-   5. Authentication
-   ========================================================= */
-
-async function handleGoogleLogin(e) {
-
-  if (e) e.preventDefault();
-
-  if (!supabase) {
-
-    alert(
-      'خدمة تسجيل الدخول غير متاحة حاليًا. حاول مرة أخرى.'
-    );
-
-    return;
-  }
-
-  try {
-
-    const { error } =
-      await supabase.auth.signInWithOAuth({
-
-        provider: 'google',
-
-        options: {
-
-          redirectTo:
-            window.location.origin +
-            window.location.pathname
-
-        }
-
-      });
-
-    if (error) throw error;
-
-  } catch (err) {
-
-    alert(
-      'خطأ أثناء بدء تسجيل الدخول بجوجل: ' +
-      (err.message || 'خطأ غير معروف')
-    );
-
-  }
-
-}
-
-
-async function handleEmailLogin(e) {
-
-  e.preventDefault();
-
-  if (!supabase) {
-
-    alert(
-      'خدمة تسجيل الدخول غير متاحة حاليًا. حاول مرة أخرى.'
-    );
-
-    return;
-  }
-
-  const email =
-    document.getElementById(
-      'loginEmail'
-    )?.value || '';
-
-  const pass =
-    document.getElementById(
-      'loginPassword'
-    )?.value || '';
-
-  const errorBox =
-    document.getElementById(
-      'authError'
-    );
-
-  if (errorBox) {
-
-    errorBox.classList.add(
-      'hidden'
-    );
-
-  }
-
-  try {
-
-    const { data, error } =
-      await supabase.auth.signInWithPassword({
-
-        email: email,
-
-        password: pass
-
-      });
-
-    if (error) throw error;
-
-    currentUser =
-      data?.user || null;
-
-    updateAuthUI();
-
-    navigateTo('home');
-
-  } catch (err) {
-
-    if (errorBox) {
-
-      errorBox.textContent =
-        err.message ||
-        'تعذر تسجيل الدخول';
-
-      errorBox.classList.remove(
-        'hidden'
-      );
-
-    }
-
-  }
-
-}
-
-
-async function handleEmailSignUp(e) {
-
-  e.preventDefault();
-
-  if (!supabase) {
-
-    alert(
-      'خدمة التسجيل غير متاحة حاليًا. حاول مرة أخرى.'
-    );
-
-    return;
-  }
-
-  const name =
-    document.getElementById(
-      'regName'
-    )?.value || '';
-
-  const email =
-    document.getElementById(
-      'regEmail'
-    )?.value || '';
-
-  const pass =
-    document.getElementById(
-      'regPassword'
-    )?.value || '';
-
-  const category =
-    document.getElementById(
-      'regCategory'
-    )?.value || '';
-
-  const specialty =
-    document.getElementById(
-      'regSpecialty'
-    )?.value || '';
-
-  const region =
-    document.getElementById(
-      'regRegion'
-    )?.value || '';
-
-  const errorBox =
-    document.getElementById(
-      'authError'
-    );
-
-  if (errorBox) {
-
-    errorBox.classList.add(
-      'hidden'
-    );
-
-  }
-
-  try {
-
-    const { data, error } =
-      await supabase.auth.signUp({
-
-        email: email,
-
-        password: pass,
-
-        options: {
-
-          data: {
-
-            full_name: name,
-
-            category: category,
-
-            specialty: specialty,
-
-            region: region
-
-          }
-
-        }
-
-      });
-
-    if (error) throw error;
-
-    alert(
-      'تم إنشاء الحساب بنجاح! يرجى التحقق من بريدك إذا طُلب التأكيد.'
-    );
-
-    currentUser =
-      data?.user || null;
-
-    updateAuthUI();
-
-    navigateTo('home');
-
-  } catch (err) {
-
-    if (errorBox) {
-
-      errorBox.textContent =
-        err.message ||
-        'تعذر إنشاء الحساب';
-
-      errorBox.classList.remove(
-        'hidden'
-      );
-
-    }
-
-  }
-
-}
-
-
-async function handleSignOut() {
-
-  if (supabase) {
+    </nav>
+
+  </div>
+
+  <script>
+    /* =========================
+       Supabase
+       ========================= */
+
+    const SUPABASE_URL =
+      'https://hfpsxkmdmczcsnvlnvde.supabase.co';
+
+    const SUPABASE_ANON =
+      'sb_publishable_qiDesnRZWrwDlX20ec8LvA_pp88t-ka';
+
+    /*
+      مهم:
+      لا نفترض أن Supabase جاهز.
+      التطبيق يجب أن يعمل ويعرض الصفحات حتى لو تعذر تحميل Supabase.
+    */
+    let supabase = null;
 
     try {
-
-      await supabase.auth.signOut();
-
+      if (
+        window.supabase &&
+        typeof window.supabase.createClient === 'function'
+      ) {
+        supabase = window.supabase.createClient(
+          SUPABASE_URL,
+          SUPABASE_ANON
+        );
+      }
     } catch (error) {
-
-      console.warn(
-        'Sign out error:',
+      console.error(
+        'Supabase initialization failed:',
         error
       );
-
     }
 
-  }
+    /* =========================
+       Global state
+       ========================= */
 
-  currentUser = null;
+    let currentUser = null;
+    let currentRegion = 'الأغوار الجنوبية';
+    let radioPlaying = false;
 
-  updateAuthUI();
+    /* =========================
+       Navigation
+       ========================= */
 
-  navigateTo('home');
+    function normalizeHash(hash) {
+      return String(hash || '')
+        .replace(/^#/, '')
+        .replace(/^\/+/, '')
+        .replace(/\/+$/, '');
+    }
 
-}
+    function getRoute() {
+      return normalizeHash(window.location.hash);
+    }
 
+    function navigateTo(path) {
+      const cleanPath = String(path || 'home')
+        .replace(/^#/, '')
+        .replace(/^\/+/, '');
 
-/* =========================================================
-   6. Registration Specialties
-   ========================================================= */
+      window.location.hash = cleanPath || 'home';
+    }
 
-function updateRegistrationSpecialties() {
+    /* =========================
+       Auth UI
+       ========================= */
 
-  const cat =
-    document.getElementById(
-      'regCategory'
-    )?.value;
+    function updateAuthUI() {
+      const button =
+        document.getElementById('headerAuthButton');
 
-  const specSelect =
-    document.getElementById(
-      'regSpecialty'
-    );
+      if (!button) return;
 
-  if (!specSelect) return;
+      if (currentUser) {
+        button.textContent = 'حسابي';
+        button.onclick = function () {
+          navigateTo('profile');
+        };
+      } else {
+        button.textContent = 'دخول';
+        button.onclick = function () {
+          navigateTo('auth');
+        };
+      }
+    }
 
-  const specialties = {
+    /* =========================
+       Google Login
+       ========================= */
 
-    user: [
+    async function handleGoogleLogin(e) {
+      if (e) e.preventDefault();
 
-      'تاجر',
-      'حلاق',
-      'مواسيرجي',
-      'عامل بناء',
-      'نجار',
-      'دهان',
-      'بلاط وديكور',
-      'عامل نظافة',
-      'سائق / نقل',
-      'كوافيرة',
-      'طباخ / خدمات طعام',
-      'خياط',
-      'مصور / صانع محتوى'
+      if (!supabase) {
+        alert(
+          'خدمة تسجيل الدخول غير متاحة حاليًا. حاول مرة أخرى.'
+        );
+        return;
+      }
 
-    ],
+      try {
+        const { error } =
+          await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+              redirectTo:
+                window.location.origin +
+                window.location.pathname
+            }
+          });
 
-    farmer: [
+        if (error) throw error;
 
-      'مزارع'
+      } catch (err) {
+        alert(
+          'خطأ أثناء بدء تسجيل الدخول بجوجل: ' +
+          (err.message || 'خطأ غير معروف')
+        );
+      }
+    }
 
-    ],
+    /* =========================
+       Email Login
+       ========================= */
 
-    technician: [
+    async function handleEmailLogin(e) {
+      if (e) e.preventDefault();
 
-      'فني صيانة',
-      'كهربائي',
-      'ميكانيكي سيارات',
-      'فني تكييف وتبريد',
-      'فني صيانة أجهزة وهواتف',
-      'فني كمبيوتر'
+      if (!supabase) {
+        alert(
+          'خدمة تسجيل الدخول غير متاحة حاليًا. حاول مرة أخرى.'
+        );
+        return;
+      }
 
-    ]
+      const emailInput =
+        document.getElementById('loginEmail');
 
-  };
+      const passwordInput =
+        document.getElementById('loginPassword');
 
-  const list =
-    specialties[cat] || [];
+      const email =
+        emailInput ? emailInput.value.trim() : '';
 
-  specSelect.innerHTML =
-    '<option value="">اختر التخصص</option>' +
+      const password =
+        passwordInput ? passwordInput.value : '';
 
-    list
-      .map(item =>
-        `<option value="${item}">${item}</option>`
-      )
-      .join('');
+      if (!email || !password) {
+        alert('يرجى إدخال البريد الإلكتروني وكلمة المرور.');
+        return;
+      }
 
-}
+      try {
+        const { data, error } =
+          await supabase.auth.signInWithPassword({
+            email,
+            password
+          });
 
+        if (error) throw error;
 
-/* =========================================================
-   7. Radio
-   ========================================================= */
+        currentUser =
+          data && data.user
+            ? data.user
+            : null;
 
-function toggleRadio() {
+        updateAuthUI();
+        navigateTo('home');
 
-  radioPlaying =
-    !radioPlaying;
+      } catch (err) {
+        alert(
+          'تعذر تسجيل الدخول: ' +
+          (err.message || 'خطأ غير معروف')
+        );
+      }
+    }
 
-  const btn =
-    document.getElementById(
-      'radioPlayBtn'
-    );
+    /* =========================
+       Registration specialties
+       ========================= */
 
-  const wave =
-    document.getElementById(
-      'radioWave'
-    );
+    function updateRegistrationSpecialties() {
+      const category =
+        document.getElementById('regCategory');
 
-  if (btn) {
+      const specialty =
+        document.getElementById('regSpecialty');
 
-    btn.textContent =
-      radioPlaying
-        ? '⏸ إيقاف مؤقت'
-        : '▶ تشغيل البث';
+      if (!category || !specialty) return;
 
-  }
+      const cat = category.value;
 
-  if (wave) {
+      const userSpecialties = [
+        'تاجر',
+        'حلاق',
+        'مواسيرجي',
+        'عامل بناء',
+        'نجار',
+        'دهان',
+        'بلاط وديكور',
+        'عامل نظافة',
+        'سائق / نقل',
+        'كوافيرة',
+        'طباخ / خدمات طعام',
+        'خياط',
+        'مصور / صانع محتوى'
+      ];
 
-    wave.style.opacity =
-      radioPlaying
-        ? '1'
-        : '0.2';
+      const technicianSpecialties = [
+        'فني صيانة',
+        'كهربائي',
+        'ميكانيكي سيارات',
+        'فني تكييف وتبريد',
+        'فني صيانة أجهزة وهواتف',
+        'فني كمبيوتر'
+      ];
 
-  }
+      const farmerSpecialties = [
+        'مزارع'
+      ];
 
-}
+      let list = [];
 
+      if (cat === 'user') {
+        list = userSpecialties;
+      } else if (cat === 'technician') {
+        list = technicianSpecialties;
+      } else if (cat === 'farmer') {
+        list = farmerSpecialties;
+      }
 
-/* =========================================================
-   8. Home View
-   ========================================================= */
+      specialty.innerHTML =
+        '<option value="">اختر التخصص</option>' +
+        list.map(function (item) {
+          return (
+            '<option value="' +
+            escapeHtml(item) +
+            '">' +
+            escapeHtml(item) +
+            '</option>'
+          );
+        }).join('');
+    }
 
-function renderHomeView() {
+    /* =========================
+       Email Sign Up
+       ========================= */
 
-  return `
+    async function handleEmailSignUp(e) {
+      if (e) e.preventDefault();
 
-  <div class="space-y-4">
+      if (!supabase) {
+        alert(
+          'خدمة تسجيل الدخول غير متاحة حاليًا. حاول مرة أخرى.'
+        );
+        return;
+      }
 
-    <div class="bg-gradient-to-r from-slate-900 via-sky-950 to-slate-900 text-white rounded-2xl p-4 shadow-md border border-sky-900/50 space-y-2">
+      const name =
+        document.getElementById('regName')?.value.trim() || '';
 
-      <span class="inline-block px-2.5 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-full text-[10px] font-bold">
-        ⭐ إعلان مميز مدفوع (برج الأغوار العالمي)
-      </span>
+      const category =
+        document.getElementById('regCategory')?.value || '';
 
-      <h2 class="text-sm font-extrabold text-white leading-tight">
-        برج الأغوار العالمي للاستثمار الزراعي والسياحي
-      </h2>
+      const specialty =
+        document.getElementById('regSpecialty')?.value || '';
 
-      <p class="text-[11px] text-slate-300 leading-relaxed">
-        فرصة استثمارية وتجارية رائدة في قلب وادي الأردن النابض.
-      </p>
+      const region =
+        document.getElementById('regRegion')?.value || '';
 
-      <button
-        onclick="navigateTo('classifieds/featured/tower')"
-        class="bg-sky-500 hover:bg-sky-400 text-white font-bold px-3 py-2 rounded-xl text-xs transition-all w-full thumb-btn"
-      >
-        استعراض تفاصيل الإعلان المميز ←
-      </button>
+      const email =
+        document.getElementById('regEmail')?.value.trim() || '';
 
-    </div>
+      const password =
+        document.getElementById('regPassword')?.value || '';
 
+      if (
+        !name ||
+        !category ||
+        !specialty ||
+        !region ||
+        !email ||
+        !password
+      ) {
+        alert('يرجى تعبئة جميع الحقول.');
+        return;
+      }
 
-    <div class="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-xs flex items-center justify-between">
+      try {
+        const { data, error } =
+          await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+              data: {
+                full_name: name,
+                category,
+                specialty,
+                region
+              }
+            }
+          });
 
-      <div class="flex items-center gap-2.5">
+        if (error) throw error;
 
-        <div class="w-10 h-10 rounded-xl bg-sky-50 text-sky-700 flex items-center justify-center text-xl">
-          📻
+        currentRegion = region;
+
+        if (data && data.user) {
+          currentUser = data.user;
+        }
+
+        updateAuthUI();
+
+        alert(
+          'تم إنشاء الحساب بنجاح. إذا طلب منك تأكيد البريد الإلكتروني، يرجى تأكيده ثم تسجيل الدخول.'
+        );
+
+        navigateTo('auth');
+
+      } catch (err) {
+        alert(
+          'تعذر إنشاء الحساب: ' +
+          (err.message || 'خطأ غير معروف')
+        );
+      }
+    }
+
+    /* =========================
+       Sign out
+       ========================= */
+
+    async function handleSignOut() {
+      if (supabase) {
+        try {
+          await supabase.auth.signOut();
+        } catch (error) {
+          console.warn(
+            'Sign out error:',
+            error
+          );
+        }
+      }
+
+      currentUser = null;
+      updateAuthUI();
+      navigateTo('home');
+    }
+
+    /* =========================
+       Radio
+       ========================= */
+
+    function toggleRadio() {
+      radioPlaying = !radioPlaying;
+
+      const button =
+        document.getElementById('radioToggleButton');
+
+      const status =
+        document.getElementById('radioStatus');
+
+      if (button) {
+        button.textContent =
+          radioPlaying
+            ? 'إيقاف'
+            : 'تشغيل';
+      }
+
+      if (status) {
+        status.textContent =
+          radioPlaying
+            ? 'إذاعة صوت الأغوار تعمل الآن'
+            : 'اضغط تشغيل للاستماع';
+      }
+    }
+
+    /* =========================
+       Helpers
+       ========================= */
+
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function cardBase(extra) {
+      return (
+        'rounded-2xl border border-slate-200 bg-white shadow-sm ' +
+        (extra || '')
+      );
+    }
+
+    /* =========================
+       Radio component
+       ========================= */
+
+    function renderRadioBar() {
+      return `
+        <div class="${cardBase('mb-4 overflow-hidden')}">
+          <div class="flex items-center justify-between gap-3 p-4">
+            <div class="flex min-w-0 items-center gap-3">
+              <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-xl">
+                📻
+              </div>
+
+              <div class="min-w-0">
+                <div class="font-extrabold text-slate-800">
+                  إذاعة صوت الأغوار
+                </div>
+
+                <div
+                  id="radioStatus"
+                  class="mt-1 truncate text-xs text-slate-500"
+                >
+                  ${
+                    radioPlaying
+                      ? 'إذاعة صوت الأغوار تعمل الآن'
+                      : 'اضغط تشغيل للاستماع'
+                  }
+                </div>
+              </div>
+            </div>
+
+            <button
+              id="radioToggleButton"
+              type="button"
+              onclick="toggleRadio()"
+              class="shrink-0 rounded-xl bg-sky-600 px-4 py-2 text-sm font-bold text-white"
+            >
+              ${radioPlaying ? 'إيقاف' : 'تشغيل'}
+            </button>
+          </div>
         </div>
+      `;
+    }
 
-        <div>
+    /* =========================
+       Home
+       ========================= */
 
-          <h3 class="text-xs font-bold text-slate-900">
-            إذاعة صوت الأغوار
-          </h3>
+    function renderHomeView() {
+      return `
+        <div class="space-y-4 px-4 py-4">
 
-          <p class="text-[10px] text-slate-500">
-            برنامج: صوت مزارعي وادي الأردن (10:00 ص)
-          </p>
+          <section
+            class="${cardBase('overflow-hidden')}"
+            onclick="navigateTo('classifieds/featured/tower')"
+          >
+            <div class="bg-gradient-to-l from-sky-600 to-sky-500 p-5 text-white">
+              <div class="mb-2 text-xs font-bold opacity-90">
+                إعلان مميز
+              </div>
+
+              <h1 class="text-xl font-extrabold">
+                برج الأغوار العالمي
+              </h1>
+
+              <p class="mt-2 text-sm leading-6 text-white/90">
+                مساحة خاصة للإعلانات المميزة التي يتم إدارتها ورفعها من المالك أو الإدارة.
+              </p>
+
+              <button
+                type="button"
+                class="mt-4 rounded-xl bg-white px-4 py-2 text-sm font-bold text-sky-700"
+                onclick="event.stopPropagation(); navigateTo('classifieds/featured/tower')"
+              >
+                عرض الإعلان
+              </button>
+            </div>
+          </section>
+
+          ${renderRadioBar()}
+
+          <section>
+            <div class="mb-3 flex items-center justify-between">
+              <h2 class="text-lg font-extrabold text-slate-800">
+                استكشف الأغوار
+              </h2>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+
+              <button
+                type="button"
+                onclick="navigateTo('farmers')"
+                class="${cardBase('p-4 text-right')}"
+              >
+                <div class="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-green-50 text-2xl">
+                  🌱
+                </div>
+
+                <div class="font-extrabold text-slate-800">
+                  المزارعون
+                </div>
+
+                <div class="mt-1 text-xs leading-5 text-slate-500">
+                  المنتجات والمزارعون
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onclick="navigateTo('shops')"
+                class="${cardBase('p-4 text-right')}"
+              >
+                <div class="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 text-2xl">
+                  🏪
+                </div>
+
+                <div class="font-extrabold text-slate-800">
+                  المحلات
+                </div>
+
+                <div class="mt-1 text-xs leading-5 text-slate-500">
+                  المحلات والخدمات
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onclick="navigateTo('technicians')"
+                class="${cardBase('p-4 text-right')}"
+              >
+                <div class="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-50 text-2xl">
+                  🛠️
+                </div>
+
+                <div class="font-extrabold text-slate-800">
+                  فني الصيانة
+                </div>
+
+                <div class="mt-1 text-xs leading-5 text-slate-500">
+                  فنيون وخدمات صيانة
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onclick="navigateTo('classifieds')"
+                class="${cardBase('p-4 text-right')}"
+              >
+                <div class="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-violet-50 text-2xl">
+                  🛍️
+                </div>
+
+                <div class="font-extrabold text-slate-800">
+                  السوق
+                </div>
+
+                <div class="mt-1 text-xs leading-5 text-slate-500">
+                  إعلانات البيع والشراء
+                </div>
+              </button>
+
+            </div>
+          </section>
+
+          <section class="${cardBase('p-4')}">
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <div class="font-extrabold text-slate-800">
+                  المجتمع
+                </div>
+
+                <div class="mt-1 text-xs leading-5 text-slate-500">
+                  المنشورات والقصص والأصدقاء والرسائل والفعاليات.
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onclick="navigateTo('community')"
+                class="rounded-xl bg-slate-100 px-4 py-2 text-sm font-bold text-slate-700"
+              >
+                دخول
+              </button>
+            </div>
+          </section>
 
         </div>
+      `;
+    }
 
-      </div>
+    /* =========================
+       Community
+       ========================= */
 
-      <button
-        id="radioPlayBtn"
-        onclick="toggleRadio()"
-        class="bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs px-3 py-2 rounded-xl shadow-xs thumb-btn transition-all"
-      >
-        ${radioPlaying ? '⏸ إيقاف' : 'استماع ومداخلة'}
-      </button>
-
-    </div>
-
-
-    <div>
-
-      <h3 class="text-xs font-bold text-slate-800 mb-2.5">
-        أقسام المنصة المعتمدة:
-      </h3>
-
-      <div class="grid grid-cols-2 gap-2.5">
-
-        <div
-          onclick="navigateTo('farmers')"
-          class="bg-white border border-slate-200/80 rounded-2xl p-3.5 cursor-pointer hover:border-sky-500 shadow-2xs transition-all text-center"
-        >
-          <span class="text-2xl block mb-1">🌱</span>
-          <h4 class="text-xs font-bold text-slate-900">
-            المزارعون والمحاصيل
-          </h4>
-          <p class="text-[10px] text-slate-400 mt-0.5">
-            عروض الخضار والتمور...
-          </p>
-        </div>
-
-
-        <div
-          onclick="navigateTo('shops')"
-          class="bg-white border border-slate-200/80 rounded-2xl p-3.5 cursor-pointer hover:border-sky-500 shadow-2xs transition-all text-center"
-        >
-          <span class="text-2xl block mb-1">🏪</span>
-          <h4 class="text-xs font-bold text-slate-900">
-            المحلات والمطاعم
-          </h4>
-          <p class="text-[10px] text-slate-400 mt-0.5">
-            دليل المحلات والتموين...
-          </p>
-        </div>
-
-
-        <div
-          onclick="navigateTo('technicians')"
-          class="bg-white border border-slate-200/80 rounded-2xl p-3.5 cursor-pointer hover:border-sky-500 shadow-2xs transition-all text-center"
-        >
-          <span class="text-2xl block mb-1">🛠️</span>
-          <h4 class="text-xs font-bold text-slate-900">
-            الفنيون والصيانة
-          </h4>
-          <p class="text-[10px] text-slate-400 mt-0.5">
-            سباكة، كهرباء، مضخات...
-          </p>
-        </div>
-
-
-        <div
-          onclick="navigateTo('classifieds')"
-          class="bg-white border border-slate-200/80 rounded-2xl p-3.5 cursor-pointer hover:border-sky-500 shadow-2xs transition-all text-center"
-        >
-          <span class="text-2xl block mb-1">📢</span>
-          <h4 class="text-xs font-bold text-slate-900">
-            سوق المستعمل
-          </h4>
-          <p class="text-[10px] text-slate-400 mt-0.5">
-            بيع وشراء معدات وأثاث...
-          </p>
-        </div>
-
-      </div>
-
-    </div>
-
-  </div>
-
-  `;
-
-}
-
-
-/* =========================================================
-   9. Community View
-   ========================================================= */
-
-function renderCommunityView() {
-
-  return `
-
-  <div class="space-y-4">
-
-    <div class="bg-slate-900 text-white p-4 rounded-2xl shadow-md space-y-3">
-
-      <div class="flex items-center justify-between">
-
-        <div class="flex items-center gap-2.5">
-
-          <span class="text-2xl">🎙️</span>
+    function renderCommunityView() {
+      return `
+        <div class="space-y-4 px-4 py-4">
 
           <div>
+            <h1 class="text-xl font-extrabold text-slate-800">
+              المجتمع
+            </h1>
 
-            <h3 class="text-xs font-bold text-white">
-              إذاعة صوت الأغوار
-            </h3>
-
-            <p class="text-[10px] text-slate-400">
-              بث مجتمعي مباشر • تحكم يدوي بالصوت
+            <p class="mt-1 text-sm text-slate-500">
+              مساحة المجتمع والتواصل داخل الأغوار.
             </p>
+          </div>
+
+          ${renderRadioBar()}
+
+          <div class="grid grid-cols-2 gap-3">
+
+            <button
+              type="button"
+              onclick="requireAuth('المنشورات')"
+              class="${cardBase('p-4 text-right')}"
+            >
+              <div class="mb-3 text-2xl">📝</div>
+              <div class="font-extrabold text-slate-800">
+                المنشورات
+              </div>
+              <div class="mt-1 text-xs text-slate-500">
+                منشورات المجتمع
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onclick="requireAuth('القصص')"
+              class="${cardBase('p-4 text-right')}"
+            >
+              <div class="mb-3 text-2xl">⭕</div>
+              <div class="font-extrabold text-slate-800">
+                القصص
+              </div>
+              <div class="mt-1 text-xs text-slate-500">
+                قصص المجتمع
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onclick="requireAuth('الأصدقاء')"
+              class="${cardBase('p-4 text-right')}"
+            >
+              <div class="mb-3 text-2xl">👥</div>
+              <div class="font-extrabold text-slate-800">
+                الأصدقاء
+              </div>
+              <div class="mt-1 text-xs text-slate-500">
+                الأصدقاء والتواصل
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onclick="requireAuth('الرسائل')"
+              class="${cardBase('p-4 text-right')}"
+            >
+              <div class="mb-3 text-2xl">💬</div>
+              <div class="font-extrabold text-slate-800">
+                الرسائل
+              </div>
+              <div class="mt-1 text-xs text-slate-500">
+                الرسائل الخاصة
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onclick="requireAuth('إعلانات مجتمعية')"
+              class="${cardBase('p-4 text-right')}"
+            >
+              <div class="mb-3 text-2xl">📢</div>
+              <div class="font-extrabold text-slate-800">
+                إعلانات مجتمعية
+              </div>
+              <div class="mt-1 text-xs text-slate-500">
+                إعلانات داخل المجتمع
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onclick="navigateTo('events')"
+              class="${cardBase('p-4 text-right')}"
+            >
+              <div class="mb-3 text-2xl">📅</div>
+              <div class="font-extrabold text-slate-800">
+                الفعاليات
+              </div>
+              <div class="mt-1 text-xs text-slate-500">
+                فعاليات الأغوار
+              </div>
+            </button>
 
           </div>
 
-        </div>
+          <button
+            type="button"
+            onclick="requireAuth('البث المباشر')"
+            class="${cardBase('w-full overflow-hidden text-right')}"
+          >
+            <div class="bg-amber-50 p-4">
+              <div class="flex items-center gap-3">
+                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-100 text-2xl">
+                  🔴
+                </div>
 
-        <button
-          onclick="toggleRadio()"
-          class="bg-sky-500 hover:bg-sky-400 text-white font-bold text-xs px-3.5 py-2 rounded-xl shadow-xs transition-all thumb-btn"
-        >
-          ${radioPlaying ? '⏸ إيقاف مؤقت' : '▶ تشغيل البث'}
-        </button>
+                <div>
+                  <div class="font-extrabold text-slate-800">
+                    البث المباشر
+                  </div>
 
-      </div>
-
-
-      <div
-        id="radioWave"
-        class="flex items-center justify-center gap-1.5 h-6 opacity-20 transition-opacity"
-      >
-
-        <div class="w-1 h-3 bg-sky-400 rounded-full animate-pulse"></div>
-        <div class="w-1 h-6 bg-sky-400 rounded-full animate-pulse"></div>
-        <div class="w-1 h-2 bg-sky-400 rounded-full animate-pulse"></div>
-        <div class="w-1 h-5 bg-sky-400 rounded-full animate-pulse"></div>
-        <div class="w-1 h-3 bg-sky-400 rounded-full animate-pulse"></div>
-
-      </div>
-
-    </div>
-
-
-    <div class="space-y-2">
-
-      <h3 class="text-xs font-bold text-slate-800">
-        أقسام المجتمع والتفاعل:
-      </h3>
-
-
-      <div class="grid grid-cols-2 gap-2.5">
-
-
-        <div
-          onclick="alert('قسم المنشورات المجتمعية')"
-          class="bg-white border border-slate-200 rounded-2xl p-3 text-center cursor-pointer hover:border-sky-500 shadow-2xs"
-        >
-          <span class="text-2xl block mb-1">📝</span>
-          <h4 class="text-xs font-bold text-slate-900">
-            المنشورات
-          </h4>
-          <p class="text-[10px] text-slate-400">
-            تغذية حقلية ومشاركات
-          </p>
-        </div>
-
-
-        <div
-          onclick="alert('قصص الأغوار الميدانية')"
-          class="bg-white border border-slate-200 rounded-2xl p-3 text-center cursor-pointer hover:border-sky-500 shadow-2xs"
-        >
-          <span class="text-2xl block mb-1">📸</span>
-          <h4 class="text-xs font-bold text-slate-900">
-            القصص
-          </h4>
-          <p class="text-[10px] text-slate-400">
-            يوميات حقول الوادي
-          </p>
-        </div>
-
-
-        <div
-          onclick="alert('الأصدقاء وشبكة المعارف')"
-          class="bg-white border border-slate-200 rounded-2xl p-3 text-center cursor-pointer hover:border-sky-500 shadow-2xs"
-        >
-          <span class="text-2xl block mb-1">🤝</span>
-          <h4 class="text-xs font-bold text-slate-900">
-            الأصدقاء
-          </h4>
-          <p class="text-[10px] text-slate-400">
-            التواصل والتعارف
-          </p>
-        </div>
-
-
-        <div
-          onclick="alert('صندوق المحادثات والرسائل')"
-          class="bg-white border border-slate-200 rounded-2xl p-3 text-center cursor-pointer hover:border-sky-500 shadow-2xs"
-        >
-          <span class="text-2xl block mb-1">💬</span>
-          <h4 class="text-xs font-bold text-slate-900">
-            الرسائل
-          </h4>
-          <p class="text-[10px] text-slate-400">
-            محادثات خاصة وآمنة
-          </p>
-        </div>
-
-
-        <div
-          onclick="alert('الإعلانات والتنبيهات المجتمعية غير التجارية')"
-          class="bg-white border border-slate-200 rounded-2xl p-3 text-center cursor-pointer hover:border-sky-500 shadow-2xs"
-        >
-          <span class="text-2xl block mb-1">📣</span>
-          <h4 class="text-xs font-bold text-slate-900">
-            إعلانات مجتمعية
-          </h4>
-          <p class="text-[10px] text-slate-400">
-            مبادرات وأخبار أهلية
-          </p>
-        </div>
-
-
-        <div
-          onclick="navigateTo('events')"
-          class="bg-white border border-slate-200 rounded-2xl p-3 text-center cursor-pointer hover:border-sky-500 shadow-2xs"
-        >
-          <span class="text-2xl block mb-1">📅</span>
-          <h4 class="text-xs font-bold text-slate-900">
-            الفعاليات
-          </h4>
-          <p class="text-[10px] text-slate-400">
-            مهرجانات ومواسم محلية
-          </p>
-        </div>
-
-      </div>
-
-
-      <div class="bg-amber-50 border border-amber-200 rounded-2xl p-3 flex items-center justify-between">
-
-        <div class="flex items-center gap-2.5">
-
-          <span class="text-xl">📹</span>
-
-          <div>
-
-            <h4 class="text-xs font-bold text-amber-950">
-              البث المباشر الميداني
-            </h4>
-
-            <p class="text-[10px] text-amber-800">
-              متاح حسب الصلاحية الإدارية والباقة النشطة
-            </p>
-
-          </div>
+                  <div class="mt-1 text-xs leading-5 text-slate-600">
+                    متاح حسب الصلاحية.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </button>
 
         </div>
-
-        <button
-          onclick="alert('بدء البث متاح حصراً للحسابات المصرح لها بعد تفعيل الباقة يدوياً من الإدارة.')"
-          class="bg-amber-600 text-white text-[11px] font-bold px-3 py-1.5 rounded-xl shadow-2xs thumb-btn"
-        >
-          معاينة
-        </button>
-
-      </div>
-
-    </div>
-
-  </div>
-
-  `;
-
-}
-
-
-/* =========================================================
-   10. Register View
-   ========================================================= */
-
-function renderRegisterView() {
-
-  setTimeout(
-    updateRegistrationSpecialties,
-    50
-  );
-
-  return `
-
-  <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
-
-    <div class="text-center">
-
-      <h2 class="text-base font-bold text-slate-900">
-        إنشاء حساب جديد
-      </h2>
-
-      <p class="text-xs text-slate-500 mt-0.5">
-        حدد فئتك ونشاطك في مجتمع وادي الأردن
-      </p>
-
-    </div>
-
-
-    <div
-      id="authError"
-      class="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl hidden"
-    ></div>
-
-
-    <form
-      onsubmit="handleEmailSignUp(event)"
-      class="space-y-3"
-    >
-
-      <div>
-
-        <label class="block text-xs font-bold text-slate-700 mb-1">
-          الاسم الكامل
-        </label>
-
-        <input
-          type="text"
-          id="regName"
-          required
-          placeholder="مثال: أحمد عبد الله"
-          class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500"
-        >
-
-      </div>
-
-
-      <div>
-
-        <label class="block text-xs font-bold text-slate-700 mb-1">
-          الفئة الرئيسية
-        </label>
-
-        <select
-          id="regCategory"
-          onchange="updateRegistrationSpecialties()"
-          class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500"
-        >
-
-          <option value="user">
-            مستخدم مسجل
-          </option>
-
-          <option value="farmer">
-            مزارع
-          </option>
-
-          <option value="technician">
-            فني صيانة
-          </option>
-
-        </select>
-
-      </div>
-
-
-      <div>
-
-        <label class="block text-xs font-bold text-slate-700 mb-1">
-          المهنة / التخصص المعتمد
-        </label>
-
-        <select
-          id="regSpecialty"
-          required
-          class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500"
-        >
-          <option value="">
-            اختر التخصص
-          </option>
-        </select>
-
-      </div>
-
-
-      <div>
-
-        <label class="block text-xs font-bold text-slate-700 mb-1">
-          المنطقة الجغرافية
-        </label>
-
-        <select
-          id="regRegion"
-          class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500"
-        >
-
-          <option value="الأغوار الجنوبية">
-            الأغوار الجنوبية
-          </option>
-
-          <option value="الأغوار الوسطى">
-            الأغوار الوسطى
-          </option>
-
-          <option value="الأغوار الشمالية">
-            الأغوار الشمالية
-          </option>
-
-        </select>
-
-      </div>
-
-
-      <div>
-
-        <label class="block text-xs font-bold text-slate-700 mb-1">
-          البريد الإلكتروني
-        </label>
-
-        <input
-          type="email"
-          id="regEmail"
-          required
-          placeholder="name@example.com"
-          class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500"
-        >
-
-      </div>
-
-
-      <div>
-
-        <label class="block text-xs font-bold text-slate-700 mb-1">
-          كلمة المرور
-        </label>
-
-        <input
-          type="password"
-          id="regPassword"
-          required
-          placeholder="••••••••"
-          class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500"
-        >
-
-      </div>
-
-
-      <button
-        type="submit"
-        class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl text-xs shadow-xs transition-all thumb-btn"
-      >
-        إنشاء الحساب الآن
-      </button>
-
-    </form>
-
-
-    <div class="text-center pt-2">
-
-      <button
-        onclick="navigateTo('auth')"
-        class="text-xs text-sky-600 font-bold hover:underline"
-      >
-        لديك حساب بالفعل؟ تسجيل الدخول
-      </button>
-
-    </div>
-
-  </div>
-
-  `;
-
-}
-
-
-/* =========================================================
-   11. Auth View
-   ========================================================= */
-
-function renderAuthView() {
-
-  return `
-
-  <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
-
-    <div class="text-center">
-
-      <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-sky-600 to-emerald-600 text-white text-xl flex items-center justify-center mx-auto mb-2 shadow-xs">
-        🌾
-      </div>
-
-      <h2 class="
+      `;
+    }
+
+    /* =========================
+       Auth requirement
+       ========================= */
+
+    function requireAuth(featureName) {
+      if (currentUser) {
+        alert(
+          'سيتم فتح ' +
+          featureName +
+          ' بعد تفعيل هذه الوظيفة في المرحلة التالية.'
+        );
+        return;
+      }
+
+      alert(
+        'يرجى تسجيل الدخول لاستخدام ' +
+        featureName +
+        '.'
+      );
+
+      navigateTo('auth');
+    }
+
+    /* =========================
+       Register
+       ========================= */
+
+    function renderRegisterView() {
+      return `
+        <div class="px-4 py-5">
+
+          <div class="mb-5">
+            <button
+              type="button"
+              onclick="navigateTo('auth')"
+              class="mb-3 text-sm font-bold text-sky-600"
+            >
+              ← العودة لتسجيل الدخول
+            </button>
+
+            <h1 class="text-xl font-extrabold text-s
