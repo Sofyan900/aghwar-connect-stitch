@@ -121,7 +121,8 @@
             auth: {
               persistSession: true,
               autoRefreshToken: true,
-              detectSessionInUrl: true
+              detectSessionInUrl: false,
+              flowType: 'pkce'
             }
           });
         }
@@ -157,7 +158,18 @@
       const [currentRole, setCurrentRole] = useState(ROLES.CITIZEN);
       const [currentRegion, setCurrentRegion] = useState('south_aghwar');
       const [deviceMode, setDeviceMode] = useState('mobile');
-      const [currentRoute, setCurrentRoute] = useState('/home');
+      // Route state: preserve the screen on refresh/direct links.
+      const ROUTABLE_PATHS = useMemo(() => new Set([
+        '/home','/auth/login','/account','/farmers','/technicians','/radio','/directory',
+        '/admin','/forbidden','/tower-ad','/community','/classifieds','/events','/shops'
+      ]), []);
+      const getInitialRoute = () => {
+        const hashPath = window.location.hash && window.location.hash.startsWith('#/')
+          ? window.location.hash.slice(1).split('?')[0] : '';
+        const path = hashPath || window.location.pathname;
+        return ROUTABLE_PATHS.has(path) ? path : '/home';
+      };
+      const [currentRoute, setCurrentRoute] = useState(getInitialRoute);
       const [routeParams, setRouteParams] = useState({});
 
       // الإذاعة الحية
@@ -171,50 +183,67 @@
         setTimeout(() => setToastMessage(null), 3500);
       };
 
-      // --------------------------------------------------------------------------
-      // استماع لجلسات Supabase Auth الحقيقية عند التشغيل
-      // --------------------------------------------------------------------------
+      // Keep browser back/forward navigation synchronized with the visible screen.
       useEffect(() => {
-        if (!supabaseClient) {
-          setAuthLoading(false);
-          return;
-        }
-
-        // فحص الجلسة الحالية
-        supabaseClient.auth.getSession().then(({ data: { session }, error }) => {
-          if (session?.user) {
-            setSessionUser(session.user);
-            // تعيين الدور من بيانات المستخدم الوصفية
-            const userRole = session.user.user_metadata?.role || ROLES.CITIZEN;
-            setCurrentRole(userRole);
-          } else {
-            // كزائر عند عدم وجود جلسة، إلا إذا تم التبديل بالمحاكي
-            setSessionUser(null);
-          }
-          setAuthLoading(false);
-        }).catch(() => {
-          setAuthLoading(false);
-        });
-
-        // الاستماع لتغيرات الجلسة (Login, Logout, Token Refresh)
-        const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((event, session) => {
-          console.log('Supabase Auth Event:', event, session);
-          if (session?.user) {
-            setSessionUser(session.user);
-            const userRole = session.user.user_metadata?.role || ROLES.CITIZEN;
-            setCurrentRole(userRole);
-          } else {
-            setSessionUser(null);
-            // إعادة ضبط الدور إلى زائر عند تسجيل الخروج
-            if (event === 'SIGNED_OUT') {
-              setCurrentRole(ROLES.GUEST);
-            }
-          }
-        });
-
-        return () => {
-          subscription?.unsubscribe();
+        const syncRoute = () => {
+          const hashPath = window.location.hash && window.location.hash.startsWith('#/')
+            ? window.location.hash.slice(1).split('?')[0] : '';
+          const path = hashPath || window.location.pathname;
+          if (ROUTABLE_PATHS.has(path)) setCurrentRoute(path);
         };
+        window.addEventListener('popstate', syncRoute);
+        window.addEventListener('hashchange', syncRoute);
+        return () => {
+          window.removeEventListener('popstate', syncRoute);
+          window.removeEventListener('hashchange', syncRoute);
+        };
+      }, [ROUTABLE_PATHS]);
+
+      useEffect(() => {
+        if (!supabaseClient) { setAuthLoading(false); return; }
+        let cancelled = false;
+        const finishOAuthCallback = async () => {
+          try {
+            const url = new URL(window.location.href);
+            const code = url.searchParams.get('code');
+            const flowId = url.searchParams.get('sb_flow_id');
+            const oauthError = url.searchParams.get('error');
+            const oauthErrorDescription = url.searchParams.get('error_description');
+            if (oauthError) {
+              const message = oauthErrorDescription || oauthError;
+              showToast(`❌ فشل تسجيل الدخول عبر Google: ${message}`);
+              ['error','error_code','error_description','state'].forEach(k => url.searchParams.delete(k));
+              window.history.replaceState({}, '', url.pathname + (url.search ? url.search : '') + url.hash);
+            } else if (code) {
+              const { error: exchangeError } = await supabaseClient.auth.exchangeCodeForSession(
+                code,
+                flowId ? { flowId } : undefined
+              );
+              if (exchangeError) throw exchangeError;
+              url.searchParams.delete('code'); url.searchParams.delete('state');
+              window.history.replaceState({}, '', url.pathname + (url.search ? url.search : '') + url.hash);
+            }
+            const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
+            if (sessionError) throw sessionError;
+            if (!cancelled && session?.user) {
+              setSessionUser(session.user);
+              if (window.location.pathname === '/auth/login') { window.history.replaceState({}, '', '/home'); setCurrentRoute('/home'); }
+              setCurrentRole(session.user.user_metadata?.role || ROLES.CITIZEN);
+            } else if (!cancelled) setSessionUser(null);
+          } catch (err) {
+            console.error('Supabase OAuth callback processing error:', err);
+            if (!cancelled) showToast(`❌ تعذر إكمال تسجيل الدخول: ${err?.message || 'خطأ غير معروف'}`);
+          } finally { if (!cancelled) setAuthLoading(false); }
+        };
+        finishOAuthCallback();
+        const { data: { subscription } } = supabaseClient.auth.onAuthStateChange((event, session) => {
+          if (session?.user) {
+            setSessionUser(session.user);
+            if (window.location.pathname === '/auth/login') { window.history.replaceState({}, '', '/home'); setCurrentRoute('/home'); }
+            setCurrentRole(session.user.user_metadata?.role || ROLES.CITIZEN);
+          } else { setSessionUser(null); if (event === 'SIGNED_OUT') setCurrentRole(ROLES.GUEST); }
+        });
+        return () => { cancelled = true; subscription?.unsubscribe(); };
       }, [supabaseClient]);
 
       // تحديث مفاتيح Supabase المخصصة
@@ -254,21 +283,6 @@
           });
 
           if (error) {
-            // معالجة الخطأ التوضيحي للبيئة التجريبية إن لم يكن المشروع متصلاً بشبكة حية
-            if (error.message && error.message.includes('Fetch') || error.message.includes('network')) {
-              // تسجيل افتراضي متسامح للعرض التوضيحي
-              const mockUser = {
-                id: 'demo-user-101',
-                email: formEmail,
-                user_metadata: { full_name: formFullName || 'مواطن وادي الأردن', role: ROLES.CITIZEN }
-              };
-              setSessionUser(mockUser);
-              setCurrentRole(ROLES.CITIZEN);
-              showToast('🟢 تم الدخول بنجاح (محاكاة الجلسة الآمنة مع Supabase)');
-              const destination = routeParams.redirect || '/home';
-              setCurrentRoute(destination);
-              return;
-            }
             throw error;
           }
 
@@ -278,7 +292,7 @@
             setCurrentRole(userRole);
             showToast(`مرحباً بك مجدداً ${data.user.user_metadata?.full_name || data.user.email} 🌾`);
             const destination = routeParams.redirect || '/home';
-            setCurrentRoute(destination);
+            navigate(destination);
           }
         } catch (err) {
           showToast(`❌ فشل تسجيل الدخول: ${err.message || 'بيانات الاعتماد غير صالحة'}`);
@@ -307,19 +321,6 @@
           });
 
           if (error) {
-            if (error.message && (error.message.includes('Fetch') || error.message.includes('network'))) {
-              const mockUser = {
-                id: 'demo-new-user',
-                email: formEmail,
-                user_metadata: { full_name: formFullName, role: ROLES.CITIZEN }
-              };
-              setSessionUser(mockUser);
-              setCurrentRole(ROLES.CITIZEN);
-              showToast('🌱 تم إنشاء حساب المواطن بنجاح وحفظ الملف الشخصي');
-              const destination = routeParams.redirect || '/home';
-              setCurrentRoute(destination);
-              return;
-            }
             throw error;
           }
 
@@ -328,7 +329,7 @@
             setCurrentRole(ROLES.CITIZEN);
             showToast('✅ تم إنشاء حسابك كمواطن في أغوار كونكت بنجاح');
             const destination = routeParams.redirect || '/home';
-            setCurrentRoute(destination);
+            navigate(destination);
           }
         } catch (err) {
           showToast(`❌ تعذر إنشاء الحساب: ${err.message}`);
@@ -370,27 +371,31 @@
         setSessionUser(null);
         setCurrentRole(ROLES.GUEST);
         showToast('🚪 تم تسجيل الخروج بنجاح والتحويل لصفة زائر');
-        setCurrentRoute('/home');
+        navigate('/home');
       };
 
-      // 5. تسجيل الدخول عبر Google OAuth
+      // 5. تسجيل الدخول عبر Google OAuth — إنتاجي فقط، بلا محاكاة أو fallback
       const handleGoogleOAuth = async () => {
+        setAuthSubmitting(true);
         try {
           if (!supabaseClient) throw new Error('عميل Supabase غير مهيأ');
-          showToast('🔄 جاري التوجيه إلى موفر Google عبر Supabase Auth...');
-          
-          const { data, error } = await supabaseClient.auth.signInWithOAuth({
+
+          const redirectTo = `${window.location.origin}/auth/login`;
+          const { error } = await supabaseClient.auth.signInWithOAuth({
             provider: 'google',
             options: {
-              redirectTo: window.location.origin + window.location.pathname
+              redirectTo,
+              queryParams: { access_type: 'offline', prompt: 'select_account' }
             }
           });
 
-          if (error) {
-            throw error;
-          }
+          if (error) throw error;
+          // Supabase ينفذ إعادة التوجيه تلقائياً عند نجاح بدء OAuth.
         } catch (err) {
-          showToast('💡 تنبيه Google OAuth: يتطلب تفعيل Google Client ID في لوحة Supabase Dashboard > Authentication > Providers.');
+          console.error('Google OAuth error:', err);
+          showToast(`❌ تعذر بدء تسجيل الدخول عبر Google: ${err?.message || 'تحقق من إعداد Google في Supabase'}`);
+        } finally {
+          setAuthSubmitting(false);
         }
       };
 
@@ -424,6 +429,10 @@
 
         setCurrentRoute(route);
         setRouteParams(params);
+        // Keep the address bar synchronized without reloading the page.
+        if (window.location.pathname !== route) {
+          window.history.pushState({}, '', route);
+        }
         window.scrollTo(0, 0);
       };
 
