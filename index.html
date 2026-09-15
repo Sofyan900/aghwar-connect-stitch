@@ -1,16 +1,21 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
 <title>Aghwar Connect - الأغوار تجمعنا</title>
 
+<!-- Tailwind CSS CDN -->
 <script src="https://cdn.tailwindcss.com"></script>
 
+<!-- Google Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Noto+Kufi+Arabic:wght@400;600;700;800&display=swap" rel="stylesheet">
 
+<!-- Supabase JS Client -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
@@ -61,27 +66,37 @@ body {
 
 <div class="w-full max-w-md mx-auto min-h-screen flex flex-col bg-white shadow-xl relative border-x border-slate-100 pb-20">
 
+<!-- Header -->
 <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-100 px-4 py-2.5 flex items-center justify-between shadow-2xs">
 
-  <div class="flex items-center gap-2 cursor-pointer" onclick="navigateTo('home')">
+  <div
+    class="flex items-center gap-2 cursor-pointer"
+    onclick="navigateTo('home')"
+  >
 
     <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-600 to-emerald-600 flex items-center justify-center text-white text-lg shadow-xs">
       🌾
     </div>
 
     <div class="flex flex-col text-right">
+
       <span class="text-xs font-bold text-slate-900 leading-tight">
         Aghwar Connect
       </span>
 
-      <span class="text-[10px] text-emerald-700 font-semibold" id="activeRegionBadge">
+      <span
+        class="text-[10px] text-emerald-700 font-semibold"
+        id="activeRegionBadge"
+      >
         الأغوار الجنوبية
       </span>
+
     </div>
 
   </div>
 
   <div class="flex items-center gap-2">
+
     <div id="authHeaderAction">
 
       <button
@@ -92,12 +107,16 @@ body {
       </button>
 
     </div>
+
   </div>
 
 </header>
 
-<main id="appViewport" class="flex-1 w-full p-4 overflow-y-auto">
-
+<!-- Main Viewport -->
+<main
+  id="appViewport"
+  class="flex-1 w-full p-4 overflow-y-auto"
+>
   <div class="flex items-center justify-center min-h-[60vh]">
     <div class="text-center">
       <div class="text-3xl mb-2">🌾</div>
@@ -106,9 +125,9 @@ body {
       </p>
     </div>
   </div>
-
 </main>
 
+<!-- Bottom Navigation -->
 <nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/95 backdrop-blur-md border-t border-slate-200 py-1.5 px-3 flex items-center justify-around shadow-lg z-50">
 
   <button
@@ -262,6 +281,9 @@ function updateAuthUI() {
       currentUser.email?.split('@')[0] ||
       'مستخدم';
 
+    const firstLetter =
+      name.charAt(0).toUpperCase();
+
     container.innerHTML = `
 
       <div class="flex items-center gap-1.5">
@@ -272,7 +294,7 @@ function updateAuthUI() {
         >
 
           <span class="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px] font-bold">
-            ${name[0].toUpperCase()}
+            ${firstLetter}
           </span>
 
           <span class="truncate max-w-[80px]">
@@ -595,5 +617,641 @@ function updateRegistrationSpecialties() {
 
   if (!specSelect) return;
 
-  spec
-      
+  const specialties = {
+
+    user: [
+
+      'تاجر',
+      'حلاق',
+      'مواسيرجي',
+      'عامل بناء',
+      'نجار',
+      'دهان',
+      'بلاط وديكور',
+      'عامل نظافة',
+      'سائق / نقل',
+      'كوافيرة',
+      'طباخ / خدمات طعام',
+      'خياط',
+      'مصور / صانع محتوى'
+
+    ],
+
+    farmer: [
+
+      'مزارع'
+
+    ],
+
+    technician: [
+
+      'فني صيانة',
+      'كهربائي',
+      'ميكانيكي سيارات',
+      'فني تكييف وتبريد',
+      'فني صيانة أجهزة وهواتف',
+      'فني كمبيوتر'
+
+    ]
+
+  };
+
+  const list =
+    specialties[cat] || [];
+
+  specSelect.innerHTML =
+    '<option value="">اختر التخصص</option>' +
+
+    list
+      .map(item =>
+        `<option value="${item}">${item}</option>`
+      )
+      .join('');
+
+}
+
+
+/* =========================================================
+   7. Radio
+   ========================================================= */
+
+function toggleRadio() {
+
+  radioPlaying =
+    !radioPlaying;
+
+  const btn =
+    document.getElementById(
+      'radioPlayBtn'
+    );
+
+  const wave =
+    document.getElementById(
+      'radioWave'
+    );
+
+  if (btn) {
+
+    btn.textContent =
+      radioPlaying
+        ? '⏸ إيقاف مؤقت'
+        : '▶ تشغيل البث';
+
+  }
+
+  if (wave) {
+
+    wave.style.opacity =
+      radioPlaying
+        ? '1'
+        : '0.2';
+
+  }
+
+}
+
+
+/* =========================================================
+   8. Home View
+   ========================================================= */
+
+function renderHomeView() {
+
+  return `
+
+  <div class="space-y-4">
+
+    <div class="bg-gradient-to-r from-slate-900 via-sky-950 to-slate-900 text-white rounded-2xl p-4 shadow-md border border-sky-900/50 space-y-2">
+
+      <span class="inline-block px-2.5 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-full text-[10px] font-bold">
+        ⭐ إعلان مميز مدفوع (برج الأغوار العالمي)
+      </span>
+
+      <h2 class="text-sm font-extrabold text-white leading-tight">
+        برج الأغوار العالمي للاستثمار الزراعي والسياحي
+      </h2>
+
+      <p class="text-[11px] text-slate-300 leading-relaxed">
+        فرصة استثمارية وتجارية رائدة في قلب وادي الأردن النابض.
+      </p>
+
+      <button
+        onclick="navigateTo('classifieds/featured/tower')"
+        class="bg-sky-500 hover:bg-sky-400 text-white font-bold px-3 py-2 rounded-xl text-xs transition-all w-full thumb-btn"
+      >
+        استعراض تفاصيل الإعلان المميز ←
+      </button>
+
+    </div>
+
+
+    <div class="bg-white border border-slate-200 rounded-2xl p-3.5 shadow-xs flex items-center justify-between">
+
+      <div class="flex items-center gap-2.5">
+
+        <div class="w-10 h-10 rounded-xl bg-sky-50 text-sky-700 flex items-center justify-center text-xl">
+          📻
+        </div>
+
+        <div>
+
+          <h3 class="text-xs font-bold text-slate-900">
+            إذاعة صوت الأغوار
+          </h3>
+
+          <p class="text-[10px] text-slate-500">
+            برنامج: صوت مزارعي وادي الأردن (10:00 ص)
+          </p>
+
+        </div>
+
+      </div>
+
+      <button
+        id="radioPlayBtn"
+        onclick="toggleRadio()"
+        class="bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs px-3 py-2 rounded-xl shadow-xs thumb-btn transition-all"
+      >
+        ${radioPlaying ? '⏸ إيقاف' : 'استماع ومداخلة'}
+      </button>
+
+    </div>
+
+
+    <div>
+
+      <h3 class="text-xs font-bold text-slate-800 mb-2.5">
+        أقسام المنصة المعتمدة:
+      </h3>
+
+      <div class="grid grid-cols-2 gap-2.5">
+
+        <div
+          onclick="navigateTo('farmers')"
+          class="bg-white border border-slate-200/80 rounded-2xl p-3.5 cursor-pointer hover:border-sky-500 shadow-2xs transition-all text-center"
+        >
+          <span class="text-2xl block mb-1">🌱</span>
+          <h4 class="text-xs font-bold text-slate-900">
+            المزارعون والمحاصيل
+          </h4>
+          <p class="text-[10px] text-slate-400 mt-0.5">
+            عروض الخضار والتمور...
+          </p>
+        </div>
+
+
+        <div
+          onclick="navigateTo('shops')"
+          class="bg-white border border-slate-200/80 rounded-2xl p-3.5 cursor-pointer hover:border-sky-500 shadow-2xs transition-all text-center"
+        >
+          <span class="text-2xl block mb-1">🏪</span>
+          <h4 class="text-xs font-bold text-slate-900">
+            المحلات والمطاعم
+          </h4>
+          <p class="text-[10px] text-slate-400 mt-0.5">
+            دليل المحلات والتموين...
+          </p>
+        </div>
+
+
+        <div
+          onclick="navigateTo('technicians')"
+          class="bg-white border border-slate-200/80 rounded-2xl p-3.5 cursor-pointer hover:border-sky-500 shadow-2xs transition-all text-center"
+        >
+          <span class="text-2xl block mb-1">🛠️</span>
+          <h4 class="text-xs font-bold text-slate-900">
+            الفنيون والصيانة
+          </h4>
+          <p class="text-[10px] text-slate-400 mt-0.5">
+            سباكة، كهرباء، مضخات...
+          </p>
+        </div>
+
+
+        <div
+          onclick="navigateTo('classifieds')"
+          class="bg-white border border-slate-200/80 rounded-2xl p-3.5 cursor-pointer hover:border-sky-500 shadow-2xs transition-all text-center"
+        >
+          <span class="text-2xl block mb-1">📢</span>
+          <h4 class="text-xs font-bold text-slate-900">
+            سوق المستعمل
+          </h4>
+          <p class="text-[10px] text-slate-400 mt-0.5">
+            بيع وشراء معدات وأثاث...
+          </p>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  `;
+
+}
+
+
+/* =========================================================
+   9. Community View
+   ========================================================= */
+
+function renderCommunityView() {
+
+  return `
+
+  <div class="space-y-4">
+
+    <div class="bg-slate-900 text-white p-4 rounded-2xl shadow-md space-y-3">
+
+      <div class="flex items-center justify-between">
+
+        <div class="flex items-center gap-2.5">
+
+          <span class="text-2xl">🎙️</span>
+
+          <div>
+
+            <h3 class="text-xs font-bold text-white">
+              إذاعة صوت الأغوار
+            </h3>
+
+            <p class="text-[10px] text-slate-400">
+              بث مجتمعي مباشر • تحكم يدوي بالصوت
+            </p>
+
+          </div>
+
+        </div>
+
+        <button
+          onclick="toggleRadio()"
+          class="bg-sky-500 hover:bg-sky-400 text-white font-bold text-xs px-3.5 py-2 rounded-xl shadow-xs transition-all thumb-btn"
+        >
+          ${radioPlaying ? '⏸ إيقاف مؤقت' : '▶ تشغيل البث'}
+        </button>
+
+      </div>
+
+
+      <div
+        id="radioWave"
+        class="flex items-center justify-center gap-1.5 h-6 opacity-20 transition-opacity"
+      >
+
+        <div class="w-1 h-3 bg-sky-400 rounded-full animate-pulse"></div>
+        <div class="w-1 h-6 bg-sky-400 rounded-full animate-pulse"></div>
+        <div class="w-1 h-2 bg-sky-400 rounded-full animate-pulse"></div>
+        <div class="w-1 h-5 bg-sky-400 rounded-full animate-pulse"></div>
+        <div class="w-1 h-3 bg-sky-400 rounded-full animate-pulse"></div>
+
+      </div>
+
+    </div>
+
+
+    <div class="space-y-2">
+
+      <h3 class="text-xs font-bold text-slate-800">
+        أقسام المجتمع والتفاعل:
+      </h3>
+
+
+      <div class="grid grid-cols-2 gap-2.5">
+
+
+        <div
+          onclick="alert('قسم المنشورات المجتمعية')"
+          class="bg-white border border-slate-200 rounded-2xl p-3 text-center cursor-pointer hover:border-sky-500 shadow-2xs"
+        >
+          <span class="text-2xl block mb-1">📝</span>
+          <h4 class="text-xs font-bold text-slate-900">
+            المنشورات
+          </h4>
+          <p class="text-[10px] text-slate-400">
+            تغذية حقلية ومشاركات
+          </p>
+        </div>
+
+
+        <div
+          onclick="alert('قصص الأغوار الميدانية')"
+          class="bg-white border border-slate-200 rounded-2xl p-3 text-center cursor-pointer hover:border-sky-500 shadow-2xs"
+        >
+          <span class="text-2xl block mb-1">📸</span>
+          <h4 class="text-xs font-bold text-slate-900">
+            القصص
+          </h4>
+          <p class="text-[10px] text-slate-400">
+            يوميات حقول الوادي
+          </p>
+        </div>
+
+
+        <div
+          onclick="alert('الأصدقاء وشبكة المعارف')"
+          class="bg-white border border-slate-200 rounded-2xl p-3 text-center cursor-pointer hover:border-sky-500 shadow-2xs"
+        >
+          <span class="text-2xl block mb-1">🤝</span>
+          <h4 class="text-xs font-bold text-slate-900">
+            الأصدقاء
+          </h4>
+          <p class="text-[10px] text-slate-400">
+            التواصل والتعارف
+          </p>
+        </div>
+
+
+        <div
+          onclick="alert('صندوق المحادثات والرسائل')"
+          class="bg-white border border-slate-200 rounded-2xl p-3 text-center cursor-pointer hover:border-sky-500 shadow-2xs"
+        >
+          <span class="text-2xl block mb-1">💬</span>
+          <h4 class="text-xs font-bold text-slate-900">
+            الرسائل
+          </h4>
+          <p class="text-[10px] text-slate-400">
+            محادثات خاصة وآمنة
+          </p>
+        </div>
+
+
+        <div
+          onclick="alert('الإعلانات والتنبيهات المجتمعية غير التجارية')"
+          class="bg-white border border-slate-200 rounded-2xl p-3 text-center cursor-pointer hover:border-sky-500 shadow-2xs"
+        >
+          <span class="text-2xl block mb-1">📣</span>
+          <h4 class="text-xs font-bold text-slate-900">
+            إعلانات مجتمعية
+          </h4>
+          <p class="text-[10px] text-slate-400">
+            مبادرات وأخبار أهلية
+          </p>
+        </div>
+
+
+        <div
+          onclick="navigateTo('events')"
+          class="bg-white border border-slate-200 rounded-2xl p-3 text-center cursor-pointer hover:border-sky-500 shadow-2xs"
+        >
+          <span class="text-2xl block mb-1">📅</span>
+          <h4 class="text-xs font-bold text-slate-900">
+            الفعاليات
+          </h4>
+          <p class="text-[10px] text-slate-400">
+            مهرجانات ومواسم محلية
+          </p>
+        </div>
+
+      </div>
+
+
+      <div class="bg-amber-50 border border-amber-200 rounded-2xl p-3 flex items-center justify-between">
+
+        <div class="flex items-center gap-2.5">
+
+          <span class="text-xl">📹</span>
+
+          <div>
+
+            <h4 class="text-xs font-bold text-amber-950">
+              البث المباشر الميداني
+            </h4>
+
+            <p class="text-[10px] text-amber-800">
+              متاح حسب الصلاحية الإدارية والباقة النشطة
+            </p>
+
+          </div>
+
+        </div>
+
+        <button
+          onclick="alert('بدء البث متاح حصراً للحسابات المصرح لها بعد تفعيل الباقة يدوياً من الإدارة.')"
+          class="bg-amber-600 text-white text-[11px] font-bold px-3 py-1.5 rounded-xl shadow-2xs thumb-btn"
+        >
+          معاينة
+        </button>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  `;
+
+}
+
+
+/* =========================================================
+   10. Register View
+   ========================================================= */
+
+function renderRegisterView() {
+
+  setTimeout(
+    updateRegistrationSpecialties,
+    50
+  );
+
+  return `
+
+  <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
+
+    <div class="text-center">
+
+      <h2 class="text-base font-bold text-slate-900">
+        إنشاء حساب جديد
+      </h2>
+
+      <p class="text-xs text-slate-500 mt-0.5">
+        حدد فئتك ونشاطك في مجتمع وادي الأردن
+      </p>
+
+    </div>
+
+
+    <div
+      id="authError"
+      class="p-3 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl hidden"
+    ></div>
+
+
+    <form
+      onsubmit="handleEmailSignUp(event)"
+      class="space-y-3"
+    >
+
+      <div>
+
+        <label class="block text-xs font-bold text-slate-700 mb-1">
+          الاسم الكامل
+        </label>
+
+        <input
+          type="text"
+          id="regName"
+          required
+          placeholder="مثال: أحمد عبد الله"
+          class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500"
+        >
+
+      </div>
+
+
+      <div>
+
+        <label class="block text-xs font-bold text-slate-700 mb-1">
+          الفئة الرئيسية
+        </label>
+
+        <select
+          id="regCategory"
+          onchange="updateRegistrationSpecialties()"
+          class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500"
+        >
+
+          <option value="user">
+            مستخدم مسجل
+          </option>
+
+          <option value="farmer">
+            مزارع
+          </option>
+
+          <option value="technician">
+            فني صيانة
+          </option>
+
+        </select>
+
+      </div>
+
+
+      <div>
+
+        <label class="block text-xs font-bold text-slate-700 mb-1">
+          المهنة / التخصص المعتمد
+        </label>
+
+        <select
+          id="regSpecialty"
+          required
+          class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500"
+        >
+          <option value="">
+            اختر التخصص
+          </option>
+        </select>
+
+      </div>
+
+
+      <div>
+
+        <label class="block text-xs font-bold text-slate-700 mb-1">
+          المنطقة الجغرافية
+        </label>
+
+        <select
+          id="regRegion"
+          class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500"
+        >
+
+          <option value="الأغوار الجنوبية">
+            الأغوار الجنوبية
+          </option>
+
+          <option value="الأغوار الوسطى">
+            الأغوار الوسطى
+          </option>
+
+          <option value="الأغوار الشمالية">
+            الأغوار الشمالية
+          </option>
+
+        </select>
+
+      </div>
+
+
+      <div>
+
+        <label class="block text-xs font-bold text-slate-700 mb-1">
+          البريد الإلكتروني
+        </label>
+
+        <input
+          type="email"
+          id="regEmail"
+          required
+          placeholder="name@example.com"
+          class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500"
+        >
+
+      </div>
+
+
+      <div>
+
+        <label class="block text-xs font-bold text-slate-700 mb-1">
+          كلمة المرور
+        </label>
+
+        <input
+          type="password"
+          id="regPassword"
+          required
+          placeholder="••••••••"
+          class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-sky-500"
+        >
+
+      </div>
+
+
+      <button
+        type="submit"
+        class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl text-xs shadow-xs transition-all thumb-btn"
+      >
+        إنشاء الحساب الآن
+      </button>
+
+    </form>
+
+
+    <div class="text-center pt-2">
+
+      <button
+        onclick="navigateTo('auth')"
+        class="text-xs text-sky-600 font-bold hover:underline"
+      >
+        لديك حساب بالفعل؟ تسجيل الدخول
+      </button>
+
+    </div>
+
+  </div>
+
+  `;
+
+}
+
+
+/* =========================================================
+   11. Auth View
+   ========================================================= */
+
+function renderAuthView() {
+
+  return `
+
+  <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
+
+    <div class="text-center">
+
+      <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-sky-600 to-emerald-600 text-white text-xl flex items-center justify-center mx-auto mb-2 shadow-xs">
+        🌾
+      </div>
+
+      <h2 class="
