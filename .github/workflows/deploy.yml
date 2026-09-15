@@ -2,8 +2,7 @@ name: Deploy Aghwar Connect to GitHub Pages
 
 on:
   push:
-    branches:
-      - main
+    branches: ["main"]
   workflow_dispatch:
 
 permissions:
@@ -12,103 +11,67 @@ permissions:
   id-token: write
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
-
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-
-      - name: Build all 68 Stitch screens
-        shell: bash
+      - name: Prepare
         run: |
-          set -e
+          rm -rf site extracted
+          mkdir -p site extracted
 
-          rm -rf site
-          mkdir -p site
+          ZIP=$(find . -maxdepth 1 -type f -name 'Aghwar_Connect_Netlify_Ready*.zip' | head -n 1)
 
-          ZIP="Aghwar_Connect_Netlify_Ready-1.zip"
-
-          if [ ! -f "$ZIP" ]; then
-            echo "ERROR: $ZIP not found"
+          if [ -z "$ZIP" ]; then
+            echo "ZIP file not found"
             exit 1
           fi
 
-          mkdir -p extracted
-          unzip -q -o "$ZIP" -d extracted
+          unzip -q "$ZIP" -d extracted
 
+      - name: Build all Stitch screens
+        run: |
           python3 <<'PY'
           import json
           import os
           import shutil
+          import glob
 
-          root = "extracted"
-          route_file = os.path.join(root, "route-map.json")
-
-          with open(route_file, encoding="utf-8") as f:
+          with open("route-map.json", "r", encoding="utf-8") as f:
               data = json.load(f)
 
-          routes = data.get("routes", data)
+          routes = data.get("routes", data) if isinstance(data, dict) else data
 
-          if isinstance(routes, dict):
-              routes = list(routes.values())
+          if not isinstance(routes, list):
+              raise SystemExit("route-map.json format is invalid")
 
           count = 0
 
           for item in routes:
-              route = item.get("route") or item.get("path")
+              route = item.get("route")
               source = item.get("source")
 
               if not route or not source:
                   continue
 
-              source = source.lstrip("/")
-              source_file = os.path.join(root, source)
+              source_file = os.path.join("extracted", source)
 
               if not os.path.isfile(source_file):
-                  print("SKIP:", source_file)
+                  matches = glob.glob(
+                      os.path.join("extracted", "**", source),
+                      recursive=True
+                  )
+                  if matches:
+                      source_file = matches[0]
+
+              if not os.path.isfile(source_file):
+                  print("MISSING:", source)
                   continue
 
-              route = route.split("?", 1)[0].split("#", 1)[0]
+              clean_route = route.strip("/")
+              destination = os.path.join("site", clean_route, "index.html")
 
-              destination = (
-                  "site/index.html"
-                  if route == "/"
-                  else os.path.join(
-                      "site",
-                      route.lstrip("/"),
-                      "index.html"
-                  )
-              )
-
-              os.makedirs(os.path.dirname(destination), exist_ok=True)
-              shutil.copy2(source_file, destination)
-
-              count += 1
-              print("OK:", route)
-
-          print("Published screens:", count)
-
-          if count < 60:
-              raise SystemExit("ERROR: Less than 60 screens generated")
-          PY
-
-          if [ -f "site/home/index.html" ]; then
-            cp "site/home/index.html" "site/index.html"
-          fi
-
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v4
-        with:
-          path: site
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+              
