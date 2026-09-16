@@ -7,6 +7,7 @@ const SITE = path.join(ROOT, 'site');
 const EXTRACTED = path.join(ROOT, 'extracted');
 const ZIP = path.join(ROOT, 'Aghwar_Connect_Netlify_Ready-1.zip');
 const ROUTE_FILE = path.join(ROOT, 'route-map.json');
+const RUNTIME = path.join(ROOT, 'aghwar_connect_code.html');
 
 function fail(message) { console.error(`ERROR: ${message}`); process.exit(1); }
 function walk(dir, out = []) {
@@ -19,6 +20,7 @@ function walk(dir, out = []) {
 
 if (!fs.existsSync(ZIP)) fail('Aghwar_Connect_Netlify_Ready-1.zip not found');
 if (!fs.existsSync(ROUTE_FILE)) fail('route-map.json not found');
+if (!fs.existsSync(RUNTIME)) fail('aghwar_connect_code.html runtime not found');
 
 fs.rmSync(SITE, { recursive: true, force: true });
 fs.rmSync(EXTRACTED, { recursive: true, force: true });
@@ -47,6 +49,9 @@ for (const screen of screens) {
 
 const home = path.join(SITE, 'home', 'index.html');
 if (!fs.existsSync(home)) fail('Home route was not generated');
-fs.copyFileSync(home, path.join(SITE, 'index.html'));
 
-console.log(`Built ${built} Stitch screens plus root home page.`);
+// The Stitch interactive runtime is the canonical project entry point.
+// Keep all generated Stitch screens, but publish the real runtime at root.
+fs.copyFileSync(RUNTIME, path.join(SITE, 'index.html'));
+
+console.log(`Built ${built} Stitch screens and published the Stitch interactive runtime as the homepage.`);
